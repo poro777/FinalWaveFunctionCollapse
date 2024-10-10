@@ -1,12 +1,12 @@
 # Define the compiler and options
 CXX = g++
-CXXFLAGS = -O3 
+CXXFLAGS = -O3 -std=c++17
 
 # Target executable
 TARGET = a.out
 
 # Source files
-SRCS = main.cpp utils.cpp
+SRCS = main.cpp utils.cpp rules.cpp
 
 # Header files
 HDRS = utils.h rules.h WFC.h

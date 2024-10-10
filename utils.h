@@ -4,7 +4,9 @@
 #include <map>
 #include <utility>
 #include <random>
+#include <memory>
 
+using std::shared_ptr;
 using std::set;
 using std::vector;
 using std::map;
@@ -22,9 +24,18 @@ private:
     std::uniform_int_distribution<> random;
 
 public:
-    RandomGen(/* args */){
-        std::random_device rd;  // Obtain a random seed from the hardware
-        gen = std::mt19937(rd());
+    RandomGen(long long seed = -1){
+        if(seed == -1){
+            std::random_device rd;  // Obtain a random seed from the hardware
+            auto seed = rd();
+            std::cout << "Seed: " << seed << "\n";
+            gen = std::mt19937(seed);
+        }  
+        else{
+            std::cout << "Seed: " << seed << "\n";
+            gen = std::mt19937(seed);
+        }
+
         random = std::uniform_int_distribution<>(0, 100000);
     };
     ~RandomGen(){};

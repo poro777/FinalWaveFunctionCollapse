@@ -2,19 +2,45 @@
 #include <vector>
 #include <set>
 #include <iostream>
+#include <filesystem>
 
 #include "utils.h"
 #include "setOperator.h"
 
 using std::set;
 using std::vector;
+namespace fs = std::filesystem;
 
 namespace Rules{
+struct ImageShape
+{
+    ImageShape(){};
+    ImageShape(int width,
+    int height,
+    int channels):width(width), height(height), channels(channels){
+
+    }
+    int width = 0;
+    int height = 0;
+    int channels = 0;
+
+    bool operator==(const ImageShape& that){
+        return this->width == that.width && this->height == that.height && this->channels == that.channels;
+    }
+
+    bool operator!=(const ImageShape& that){
+        return !(*this == that);
+    }
+};
 
 class Rule
 {
 
 protected:
+    fs::path patternImagesRoot = "";
+    vector<unsigned char*> patterns;
+    ImageShape patternShape;
+
     // mirror top_bottom_rules, left_right_rules to bottom_top_rules, right_left_rules
     void mirror(){
         for (int i = 0; i< M;i++)
@@ -39,8 +65,10 @@ public:
     int M = 0;
 
     virtual std::string name() = 0;
+    void writeImage(Grid& grid);
+
     Rule(/* args */){};
-    ~Rule(){};
+    ~Rule();
 
     
     Superposition initValue(){
@@ -51,6 +79,7 @@ public:
         }
         return initial_state;
     }
+
     void print(){
         for (size_t i = 0; i < M; i++)
         {
@@ -75,6 +104,7 @@ class Road: public Rule
     private:
     public:
         Road(/* args */){
+            patternImagesRoot = "./data/road/";
             M = 16;
             top_bottom_rules = vector<set<int>>(M);
             bottom_top_rules = vector<set<int>>(M);
@@ -120,6 +150,7 @@ class Example: public Rule
 
 public:
     Example(){
+        patternImagesRoot = "./data/example/";
         M = 16;
         top_bottom_rules = vector<set<int>>(M);
         bottom_top_rules = vector<set<int>>(M);

@@ -19,9 +19,9 @@ private:
 protected:
     int H = 0;
     int W = 0;
-    Rule* rules;
+    shared_ptr<Rule> rules;
 public:
-    WFC(int H, int W,  Rule* rules):H(H), W(W), rules(rules){
+    WFC(int H, int W,  shared_ptr<Rule> rules):H(H), W(W), rules(rules){
 
     };
     ~WFC(){
@@ -33,6 +33,7 @@ public:
     virtual void propogate(set<Position>& unobserved, Position& position, bool print) = 0;
     virtual void printGrid() = 0;
 
+    virtual Grid getGrid() = 0;
 };
 
 class naive_WFC:public WFC
@@ -41,7 +42,7 @@ private:
     Grid grid;
     /* data */
 public:
-    naive_WFC(int H, int W, Rule* rules): WFC(H,W,rules){
+    naive_WFC(int H, int W, shared_ptr<Rule> rules): WFC(H,W,rules){
         grid = Grid(H, std::vector<Cell>(W, rules->initValue()));
 
     };
@@ -118,7 +119,7 @@ public:
                     auto& rule = rules[state];
                     vaild_state.insert(rule.begin(), rule.end());
                 }
-                
+
                 // remove elemnet not in vaild_state
                 Superposition result = set_intersection(neighbor_ss, vaild_state);
                 assert(neighbor_ss.size() >= result.size());
@@ -150,7 +151,10 @@ public:
     void printGrid(){
         print_grid(grid);
     }
-
+    
+    Grid getGrid(){
+        return grid;
+    }
 };
 
 

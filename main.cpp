@@ -28,16 +28,22 @@ int main(int argc, char *argv[]){
     bool print_process = false;
     bool print_step = false;
     bool print_result = false;
-    
+    bool save_result = false;
+    long long seed = -1;
+
     // Define long options
     static struct option long_options[] = {
         {"height", required_argument, 0, 'h'},
         {"width", required_argument, 0, 'w'},
         {"rule", required_argument, 0, 'r'},
+        {"seed", required_argument, 0, 's'},
+
         {"print-rules", no_argument, 0, 'u'},
         {"print-process", no_argument, 0, 'p'},
-        {"print-step", no_argument, 0, 's'},
+        {"print-step", no_argument, 0, 't'},
         {"print-result", no_argument, 0, 'o'},
+        {"save-result", no_argument, 0, 'a'},
+
         {0, 0, 0, 0} // End of options
     };
 
@@ -45,7 +51,7 @@ int main(int argc, char *argv[]){
     int opt;
 
     // Parse options
-    while ((opt = getopt_long(argc, argv, "w:h:r:p:u:s:o", long_options, &option_index)) != -1) {
+    while ((opt = getopt_long(argc, argv, "w:h:r:p:u:s:o:a:t", long_options, &option_index)) != -1) {
         switch (opt) {
             case 'w':
                 W = std::stoi(optarg); // Assign width
@@ -55,43 +61,50 @@ int main(int argc, char *argv[]){
                 break;
             case 'r':
                 ruleType = std::stoi(optarg); // Assign height
+                break;
+            case 's':
+                seed = std::stoll(optarg); // Assign height
+                break;                
             case 'u':
                 print_rules = true; // Enable print_rules
                 break;
             case 'p':
                 print_process = true; // Enable print_process
                 break;
-            case 's':
+            case 't':
                 print_step = true; // Enable print_step
                 break;
             case 'o':
                 print_result = true; // Enable print_result
                 break;
+            case 'a':
+                save_result = true;
+                break;
             default:
-                std::cerr << "Usage: --width <int> --height <int> [--print-rules] [--print-process] [--print-step] [--print-result]\n";
+                std::cerr << "Usage: see long_options\n";
                 return 1;
         }
     }
 
-    RandomGen random;
     
-    Rules::Rule* rule;
+    shared_ptr<Rules::Rule> rule;
     switch (ruleType)
     {
     case 0:
-        rule = new Rules::Road();
+        rule = std::make_shared<Rules::Road>();
         break;
     case 1:
-        rule = new Rules::Example();
+        rule = std::make_shared<Rules::Example>();
         break;
     default:
-        rule = new Rules::Example();
+        rule = std::make_shared<Rules::Example>();
         break;
     } 
     
     std::cout << "Running\n" << "H="<<H << ", W="<<W  << ", Rule: " << rule->name() << "\n";
+    RandomGen random(seed);
 
-    WFC* wfc_solve = new naive_WFC(H, W, rule);
+    shared_ptr<WFC> wfc_solve = std::make_shared<naive_WFC>(H, W, rule);
 
     set<Position> unobserved;
     for (int h = 0; h < H; h++)
@@ -137,7 +150,10 @@ int main(int argc, char *argv[]){
     if(print_result){
         wfc_solve->printGrid();
     }
-        
-
+    
+    if(save_result){
+        Grid result = wfc_solve->getGrid();
+        rule->writeImage(result);
+    }
     return 0;
 }
