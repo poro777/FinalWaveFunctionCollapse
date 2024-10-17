@@ -5,6 +5,7 @@
 #include <utility>
 #include <random>
 #include <memory>
+#include <iostream>
 
 using std::shared_ptr;
 using std::set;

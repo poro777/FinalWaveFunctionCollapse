@@ -29,6 +29,7 @@ int main(int argc, char *argv[]){
     bool print_step = false;
     bool print_result = false;
     bool save_result = false;
+    bool print_time = false;
     long long seed = -1;
 
     // Define long options
@@ -38,6 +39,7 @@ int main(int argc, char *argv[]){
         {"rule", required_argument, 0, 'r'},
         {"seed", required_argument, 0, 's'},
 
+        {"print-time", no_argument, 0, 'i'},
         {"print-rules", no_argument, 0, 'u'},
         {"print-process", no_argument, 0, 'p'},
         {"print-step", no_argument, 0, 't'},
@@ -60,10 +62,10 @@ int main(int argc, char *argv[]){
                 H = std::stoi(optarg); // Assign height
                 break;
             case 'r':
-                ruleType = std::stoi(optarg); // Assign height
+                ruleType = std::stoi(optarg); // ruleType
                 break;
             case 's':
-                seed = std::stoll(optarg); // Assign height
+                seed = std::stoll(optarg); // seed
                 break;                
             case 'u':
                 print_rules = true; // Enable print_rules
@@ -73,6 +75,9 @@ int main(int argc, char *argv[]){
                 break;
             case 't':
                 print_step = true; // Enable print_step
+                break;
+            case 'i':
+                print_time = true; // Enable timing
                 break;
             case 'o':
                 print_result = true; // Enable print_result
@@ -104,7 +109,10 @@ int main(int argc, char *argv[]){
     std::cout << "Running\n" << "H="<<H << ", W="<<W  << ", Rule: " << rule->name() << "\n";
     RandomGen random(seed);
 
-    shared_ptr<WFC> wfc_solve = std::make_shared<naive_WFC>(H, W, rule);
+    shared_ptr<WFC> wfc_solver = std::make_shared<naive_WFC>(H, W, rule);
+    if(print_time){
+        wfc_solver = std::make_shared<profiling_WFC>(wfc_solver);
+    }
 
     set<Position> unobserved;
     for (int h = 0; h < H; h++)
@@ -129,9 +137,9 @@ int main(int argc, char *argv[]){
         }
         
         // collapse
-        auto selected_position = wfc_solve->selectOneCell(unobserved, random);
+        auto selected_position = wfc_solver->selectOneCell(unobserved, random);
 
-        auto collapseState = wfc_solve->collapse(selected_position, random, print_step);
+        auto collapseState = wfc_solver->collapse(selected_position, random, print_step);
 
         if(collapseState == FAILED){
             std::cout << "-Failed- unobserved(rate):" << unobserved.size() << "("<<unobserved.size() / float(H*W) <<")"<< "\n";
@@ -143,17 +151,22 @@ int main(int argc, char *argv[]){
         unobserved.erase(it_selected_position);
 
         // propogate
-        wfc_solve->propogate(unobserved, selected_position, print_process);
+        wfc_solver->propogate(unobserved, selected_position, print_process);
     }
     
     
     if(print_result){
-        wfc_solve->printGrid();
+        wfc_solver->printGrid();
     }
     
     if(save_result){
-        Grid result = wfc_solve->getGrid();
+        Grid result = wfc_solver->getGrid();
         rule->writeImage(result);
+    }
+
+    if(print_time){
+        profiling_WFC* profilier = dynamic_cast<profiling_WFC*>(wfc_solver.get());
+        profilier->timer.print();
     }
     return 0;
 }

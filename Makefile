@@ -1,15 +1,15 @@
 # Define the compiler and options
 CXX = g++
-CXXFLAGS = -O3 -std=c++17
+CXXFLAGS = -O2 -std=c++17
 
 # Target executable
 TARGET = a.out
 
 # Source files
-SRCS = main.cpp utils.cpp rules.cpp
+SRCS = main.cpp utils.cpp rules.cpp WFC.cpp
 
 # Header files
-HDRS = utils.h rules.h WFC.h
+HDRS = utils.h rules.h WFC.h myTimer.h
 
 # Default target to build and run the program
 all: $(TARGET)
