@@ -106,10 +106,10 @@ class Road: public Rule
         Road(/* args */){
             patternImagesRoot = "./data/road/";
             M = 16;
-            top_bottom_rules = vector<set<int>>(M);
-            bottom_top_rules = vector<set<int>>(M);
-            left_right_rules = vector<set<int>>(M);
-            right_left_rules = vector<set<int>>(M);
+            top_bottom_rules = vector<Superposition>(M);
+            bottom_top_rules = vector<Superposition>(M);
+            left_right_rules = vector<Superposition>(M);
+            right_left_rules = vector<Superposition>(M);
 
             Superposition all = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
 
@@ -147,16 +147,33 @@ class Road: public Rule
 
 class Example: public Rule
 {
-
+/* TODO : Example for Rule, there are 7 TODO in this Class */
 public:
     Example(){
+        // TODO 1 : assign image root directory
         patternImagesRoot = "./data/example/";
-        M = 16;
-        top_bottom_rules = vector<set<int>>(M);
-        bottom_top_rules = vector<set<int>>(M);
-        left_right_rules = vector<set<int>>(M);
-        right_left_rules = vector<set<int>>(M);
 
+        // TODO 2 : assign total number of pattern
+        M = 16;
+
+        // TODO 3 : init all rules to M
+        top_bottom_rules = vector<Superposition>(M);
+        bottom_top_rules = vector<Superposition>(M);
+        left_right_rules = vector<Superposition>(M);
+        right_left_rules = vector<Superposition>(M);
+
+        /* TODO 4 : 
+        design 'top_bottom_rules' rules: 
+            If the current pattern is at the top,
+            What patterns can be connected to the bottom?
+        example:
+            top_bottom_rules[0] = {4, 8};
+            there are two rules
+            | 0 |  and  | 0 |
+            | 4 |       | 8 |
+        the index is same as in `patternImagesRoot`
+
+        */
         top_bottom_rules[0] = {4, 8};
         top_bottom_rules[1] = {5};
         top_bottom_rules[2] = {6, 10};
@@ -174,6 +191,11 @@ public:
         top_bottom_rules[14] = {5};
         top_bottom_rules[15] = {5};
         
+        /* TODO 5 : 
+        design 'left_right_rules' rules: 
+            If the current pattern is at the left,
+            What patterns can be connected to the right?
+        */
         left_right_rules[0] = {1,2,8,12,15};
         left_right_rules[1] = {1,2,8,12,15};
         left_right_rules[2] = {0,3,4,7,9,11};
@@ -191,9 +213,16 @@ public:
         left_right_rules[14] = {1,2,8,12,15};
         left_right_rules[15] = {1,2,8,12,15};
 
+        /* TODO 6 : call mirror()
+        since top_bottom_rules / bottom_top_rules , left_right_rules / left_right_rules
+        has corresponding relationship, mirror() function will handle it.
+        */
         mirror();
     }
-    std::string name(){return "Example";}
+
+    
+    /* name for this class */
+    std::string name(){/* TODO 7 */ return "Example";}
 };
 
 
