@@ -1,6 +1,6 @@
 # Define the compiler and options
 CXX = g++
-CXXFLAGS = -O2 -std=c++17
+CXXFLAGS = -O2 -std=c++20
 
 # Target executable
 TARGET = a.out

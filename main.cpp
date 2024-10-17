@@ -17,13 +17,11 @@
 
 int main(int argc, char *argv[]){
     // > make
-    // > time ./a.out
-    // > time ./a.out -w 20 -h 20 --print-reuslt
-    // > time ./a.out -w 10 -h 10 --print-rules --print-process --print-step --print-result
-
+    // > time ./a.out [long_options]
     // argument
     int W = 8, H = 8;
     int ruleType = 0;
+    int bitOp = 1;
     bool print_rules = false;
     bool print_process = false;
     bool print_step = false;
@@ -38,6 +36,7 @@ int main(int argc, char *argv[]){
         {"width", required_argument, 0, 'w'},
         {"rule", required_argument, 0, 'r'},
         {"seed", required_argument, 0, 's'},
+        {"bitOp", required_argument, 0, 'b'},
 
         {"print-time", no_argument, 0, 'i'},
         {"print-rules", no_argument, 0, 'u'},
@@ -53,7 +52,7 @@ int main(int argc, char *argv[]){
     int opt;
 
     // Parse options
-    while ((opt = getopt_long(argc, argv, "w:h:r:p:u:s:o:a:t", long_options, &option_index)) != -1) {
+    while ((opt = getopt_long(argc, argv, "w:h:r:p:u:s:o:a:t:b", long_options, &option_index)) != -1) {
         switch (opt) {
             case 'w':
                 W = std::stoi(optarg); // Assign width
@@ -66,7 +65,10 @@ int main(int argc, char *argv[]){
                 break;
             case 's':
                 seed = std::stoll(optarg); // seed
-                break;                
+                break;    
+            case 'b':
+                bitOp = std::stoi(optarg);
+                break;                               
             case 'u':
                 print_rules = true; // Enable print_rules
                 break;
@@ -109,7 +111,14 @@ int main(int argc, char *argv[]){
     std::cout << "Running\n" << "H="<<H << ", W="<<W  << ", Rule: " << rule->name() << "\n";
     RandomGen random(seed);
 
-    shared_ptr<WFC> wfc_solver = std::make_shared<naive_WFC>(H, W, rule);
+    shared_ptr<WFC> wfc_solver = nullptr;
+    if(bitOp){
+        wfc_solver= std::make_shared<bit_WFC>(H, W, rule);
+    } 
+    else{
+        wfc_solver= std::make_shared<naive_WFC>(H, W, rule);
+    }
+
     if(print_time){
         wfc_solver = std::make_shared<profiling_WFC>(wfc_solver);
     }

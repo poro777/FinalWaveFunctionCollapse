@@ -6,6 +6,7 @@
 #include "rules.h"
 #include <cassert>
 #include "myTimer.h"
+#include <bit>
 
 enum RETURN_STATE {
     OK,
@@ -55,7 +56,7 @@ public:
     };
     Position selectOneCell(set<Position>& unobserved, RandomGen& random) override ;
     RETURN_STATE collapse(Position& position, RandomGen& random, bool print_step = false) override ;
-    void propogate(set<Position>& unobserved, Position& position, bool print_process = false);
+    void propogate(set<Position>& unobserved, Position& position, bool print_process = false) override;
 
     Grid getGrid() override{
         return grid;
@@ -83,4 +84,63 @@ public:
     Grid getGrid() override{
         return component->getGrid();
     };
+};
+
+class bit_WFC:public WFC
+{
+private:
+    vector<vector<ull>> grid;
+    vector<ull> top_bottom_rules; 
+    vector<ull> bottom_top_rules;
+    vector<ull> left_right_rules; 
+    vector<ull> right_left_rules;
+
+    /* data */
+public:
+    bit_WFC(int H, int W, shared_ptr<Rule> rules): WFC(H,W,rules){
+        auto sp_to_bits = [](Superposition& sp){
+            ull n = 0;
+            for(auto pattern: sp){
+                n += (1 << pattern);
+            }
+            return n;
+        };
+        assert(rules->M <= 64);
+
+        auto init = rules->initValue();
+        grid = vector<vector<ull>>(H, vector<ull>(W, sp_to_bits(init)));
+
+        top_bottom_rules = vector<ull>(rules->M);
+        bottom_top_rules = vector<ull>(rules->M);
+        left_right_rules = vector<ull>(rules->M);
+        right_left_rules = vector<ull>(rules->M);
+        
+        for (int i = 0; i < rules->M; i++)
+        {
+            top_bottom_rules[i] = sp_to_bits(rules->top_bottom_rules[i]);
+            bottom_top_rules[i] = sp_to_bits(rules->bottom_top_rules[i]);
+            left_right_rules[i] = sp_to_bits(rules->left_right_rules[i]);
+            right_left_rules[i] = sp_to_bits(rules->right_left_rules[i]);
+        }
+        
+    };
+    ~bit_WFC(){
+
+    };
+    Position selectOneCell(set<Position>& unobserved, RandomGen& random) override ;
+    RETURN_STATE collapse(Position& position, RandomGen& random, bool print_step = false) override ;
+    void propogate(set<Position>& unobserved, Position& position, bool print_process = false) override;
+
+    Grid getGrid() override{
+        Grid grid = Grid(H, vector<Superposition>(W));
+        for (size_t h = 0; h < H; h++)
+        {
+            for (size_t w = 0; w < W; w++)
+            {
+                grid[h][w] = {(int) std::bit_width(this->grid[h][w]) - 1};
+            }
+            
+        }
+        return grid;
+    }
 };
