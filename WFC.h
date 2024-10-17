@@ -28,11 +28,13 @@ public:
 
     };
 
+    void printGrid() {
+        print_grid(getGrid());
+    };
+
     virtual Position selectOneCell(set<Position>& unobserved, RandomGen& random) = 0;
     virtual RETURN_STATE collapse(Position& position, RandomGen& random, bool print) = 0;
     virtual void propogate(set<Position>& unobserved, Position& position, bool print) = 0;
-    virtual void printGrid() = 0;
-
     virtual Grid getGrid() = 0;
 };
 
@@ -148,9 +150,6 @@ public:
         }
     };
 
-    void printGrid(){
-        print_grid(grid);
-    }
     
     Grid getGrid(){
         return grid;

@@ -49,3 +49,4 @@ public:
 
 void print_set(const set<int>& s);
 void print_grid(Grid& grid);
+inline void print_grid(Grid&& grid){print_grid(grid);}
