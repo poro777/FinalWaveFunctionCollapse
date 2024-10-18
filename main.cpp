@@ -21,14 +21,17 @@ int main(int argc, char *argv[]){
     // argument
     int W = 8, H = 8;
     int ruleType = 0;
-    int bitOp = 1;
-    bool print_rules = false;
-    bool print_process = false;
-    bool print_step = false;
-    bool print_result = false;
-    bool save_result = false;
-    bool print_time = false;
     long long seed = -1;
+    int bitOp = 1;
+
+    // flags
+    int print_rules = false;
+    int print_process = false;
+    int print_step = false;
+    int print_result = false;
+    int save_result = false;
+    int print_time = false;
+
 
     // Define long options
     static struct option long_options[] = {
@@ -38,12 +41,12 @@ int main(int argc, char *argv[]){
         {"seed", required_argument, 0, 's'},
         {"bitOp", required_argument, 0, 'b'},
 
-        {"print-time", no_argument, 0, 'i'},
-        {"print-rules", no_argument, 0, 'u'},
-        {"print-process", no_argument, 0, 'p'},
-        {"print-step", no_argument, 0, 't'},
-        {"print-result", no_argument, 0, 'o'},
-        {"save-result", no_argument, 0, 'a'},
+        {"print-time", no_argument, &print_time, 1},
+        {"print-rules", no_argument, &print_rules, 1},
+        {"print-process", no_argument, &print_process, 1},
+        {"print-step", no_argument, &print_step, 1},
+        {"print-result", no_argument, &print_result, 1},
+        {"save-result", no_argument, &save_result, 1},
 
         {0, 0, 0, 0} // End of options
     };
@@ -52,7 +55,7 @@ int main(int argc, char *argv[]){
     int opt;
 
     // Parse options
-    while ((opt = getopt_long(argc, argv, "w:h:r:p:u:s:o:a:t:b", long_options, &option_index)) != -1) {
+    while ((opt = getopt_long(argc, argv, "w:h:r:s:b:", long_options, &option_index)) != -1) {
         switch (opt) {
             case 'w':
                 W = std::stoi(optarg); // Assign width
@@ -68,27 +71,11 @@ int main(int argc, char *argv[]){
                 break;    
             case 'b':
                 bitOp = std::stoi(optarg);
-                break;                               
-            case 'u':
-                print_rules = true; // Enable print_rules
                 break;
-            case 'p':
-                print_process = true; // Enable print_process
-                break;
-            case 't':
-                print_step = true; // Enable print_step
-                break;
-            case 'i':
-                print_time = true; // Enable timing
-                break;
-            case 'o':
-                print_result = true; // Enable print_result
-                break;
-            case 'a':
-                save_result = true;
+            case 0: // long flag opt
                 break;
             default:
-                std::cerr << "Usage: see long_options\n";
+                std::cerr << "Usage: see long_options\n" ;
                 return 1;
         }
     }
