@@ -101,6 +101,7 @@ BF search: 4    Distance: 1 (-1,0)
 
 - `--save-result` : save reuslt to output_image.png
 <img src="./data/output.png" width="300">
+
 ```
  15  2  3  3  3  3  3  4 
  5  6  3  3  3  3  3  4 
