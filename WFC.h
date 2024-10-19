@@ -145,9 +145,17 @@ public:
         {
             for (size_t w = 0; w < W; w++)
             {
-                int value = (int)std::bit_width(this->grid[h][w]) - 1;
-                if(value >= 0)
-                    grid[h][w] = { value };
+                ull state = this->grid[h][w];
+                auto bwidth = std::bit_width(state);
+                auto& sp = grid[h][w];
+                for (size_t i = 0; i < bwidth; i++)
+                {
+                    /* code */
+                    if(state & 1u){
+                        sp.insert(i);
+                    }
+                    state >>= 1u;
+                }
             }
             
         }

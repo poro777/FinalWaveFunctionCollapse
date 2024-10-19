@@ -226,6 +226,99 @@ public:
 };
 
 
+class Summer: public Rule
+{
+public:
+    Summer(){
+        patternImagesRoot = "./data/Summer/";
+
+        M = 28;
+
+        top_bottom_rules = vector<Superposition>(M);
+        bottom_top_rules = vector<Superposition>(M);
+        left_right_rules = vector<Superposition>(M);
+        right_left_rules = vector<Superposition>(M);
+
+        Superposition grass_at_top =   {0,2,6,7,10,11,12, /* part 1*/ 
+                                         18, 19, 22};       /*part 2*/
+        Superposition grass_at_bottom = {0,2,4,5,8,9,12,
+                                        16,17,20};
+        Superposition grass_at_left =   {1,3,4,7,8,11,12,
+                                        16,19, 23};
+        Superposition grass_at_right =  {1,3,5,6,9,10,12,
+                                        17,18, 21};
+
+        Superposition water_at_top =    {13,14,15,20,24,25};
+        Superposition water_at_bottom = {13,14,15,22,26,27};
+        Superposition water_at_left =   {13,14,15,21,25,26};
+        Superposition water_at_right =  {13,14,15,23,24,27};
+
+        top_bottom_rules[0]  = {12};
+        top_bottom_rules[1]  = {1, 4, 9};
+        top_bottom_rules[2]  = {12};
+        top_bottom_rules[3]  = {3, 5, 8};
+        top_bottom_rules[4]  = {12};
+        top_bottom_rules[5]  = {12};
+        top_bottom_rules[6]  = {3};
+        top_bottom_rules[7]  = {1};
+        top_bottom_rules[8]  = {12};
+        top_bottom_rules[9]  = {12};
+        top_bottom_rules[10] = {1};
+        top_bottom_rules[11] = {3};
+        top_bottom_rules[12] = grass_at_top;
+        top_bottom_rules[13] = water_at_top;
+        top_bottom_rules[14] = water_at_top;
+        top_bottom_rules[15] = water_at_top;
+        top_bottom_rules[16] = {12};
+        top_bottom_rules[17] = {12};
+        top_bottom_rules[18] = {21};
+        top_bottom_rules[19] = {23};
+        top_bottom_rules[20] = {12};
+        top_bottom_rules[21] = {17,21,26};
+        top_bottom_rules[22] = {13,14,15};
+        top_bottom_rules[23] = {16,23,27};
+        top_bottom_rules[24] = {23};
+        top_bottom_rules[25] = {21};
+        top_bottom_rules[26] = {13,14,15};
+        top_bottom_rules[27] = {13,14,15};
+
+        left_right_rules[0]  = {0, 6, 9};
+        left_right_rules[1]  = {12};
+        left_right_rules[2]  = {2, 5, 10};
+        left_right_rules[3]  = {12};
+        left_right_rules[4]  = {2};
+        left_right_rules[5]  = {12};
+        left_right_rules[6]  = {12};
+        left_right_rules[7]  = {0};
+        left_right_rules[8]  = {0};
+        left_right_rules[9]  = {12};
+        left_right_rules[10] = {12};
+        left_right_rules[11] = {2};
+        left_right_rules[12] = grass_at_left;
+        left_right_rules[13] = water_at_left;
+        left_right_rules[14] = water_at_left;
+        left_right_rules[15] = water_at_left;
+        left_right_rules[16] = {20};
+        left_right_rules[17] = {12};
+        left_right_rules[18] = {12};
+        left_right_rules[19] = {22};
+        left_right_rules[20] = {17, 20,24};
+        left_right_rules[21] = {12};
+        left_right_rules[22] = {18, 22, 27};
+        left_right_rules[23] = {13,14,15};
+        left_right_rules[24] = {13,14,15};
+        left_right_rules[25] = {20};
+        left_right_rules[26] = {22};
+        left_right_rules[27] = {13,14,15};
+
+        mirror();
+    }
+
+    
+    /* name for this class */
+    std::string name(){return "Summer";}
+};
+
 
 
 }

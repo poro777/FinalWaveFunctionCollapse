@@ -90,6 +90,9 @@ int main(int argc, char *argv[]){
     case 1:
         rule = std::make_shared<Rules::Example>();
         break;
+    case 2:
+        rule = std::make_shared<Rules::Summer>();
+        break;
     default:
         rule = std::make_shared<Rules::Example>();
         break;
