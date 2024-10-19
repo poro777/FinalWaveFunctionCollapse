@@ -124,6 +124,7 @@ int main(int argc, char *argv[]){
     }
 
     int i = -1;
+    bool finish = true;
     while (unobserved.size() > 0)
     {
         i++;
@@ -139,6 +140,7 @@ int main(int argc, char *argv[]){
 
         if(collapseState == FAILED){
             std::cout << "-Failed- unobserved(rate):" << unobserved.size() << "("<<unobserved.size() / float(H*W) <<")"<< "\n";
+            finish = false;
             break;
         }
 
@@ -149,8 +151,11 @@ int main(int argc, char *argv[]){
         // propogate
         wfc_solver->propogate(unobserved, selected_position, print_process);
     }
-    
-    
+
+    if(finish){
+        wfc_solver->validateNeighbor();
+    }
+
     if(print_result){
         wfc_solver->printGrid();
     }

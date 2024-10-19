@@ -46,7 +46,7 @@ void Rules::Rule::writeImage(Grid &grid)
 
     assert(patterns.size() == M);
 
-    std::cout << "Writing image...\n";
+    std::cout << "Making image...\n";
     int H = grid.size();
     int W = grid[0].size();
 
@@ -68,12 +68,30 @@ void Rules::Rule::writeImage(Grid &grid)
         {
             // for each cell
             Superposition state = grid[h][w];
+            auto index_of_first_pixel = (h * pH) * (width) + (w * pW);
+
+
             if(state.size() != 1){
+                int value = state.size() == 0? 0 : 255; // draw white to uncollapse cells, black to invaild cells.
+
+                for (size_t i = 0; i < pH; i++)
+                {
+                    for (size_t o = 0; o < pW; o++)
+                    {
+                        // copy pattern
+                        auto output_index = (index_of_first_pixel + (i * width) + o) * channels;
+                        for (size_t c = 0; c < channels; c++)
+                        {
+                            image[output_index + c] = value;
+                        }
+                    }
+                }
                 continue;
             }
+            
             int patternId = *state.begin();
+
             auto pattern = patterns[patternId];
-            auto index_of_first_pixel = (h * pH) * (width) + (w * pW);
             for (size_t i = 0; i < pH; i++)
             {
                 for (size_t o = 0; o < pW; o++)

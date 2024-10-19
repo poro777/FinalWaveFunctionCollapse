@@ -38,6 +38,8 @@ public:
     virtual Position selectOneCell(set<Position>& unobserved, RandomGen& random) = 0;
     virtual RETURN_STATE collapse(Position& position, RandomGen& random, bool print) = 0;
     virtual void propogate(set<Position>& unobserved, Position& position, bool print) = 0;
+    virtual void validateNeighbor() {};
+
     virtual Grid getGrid() = 0;
 };
 
@@ -57,6 +59,7 @@ public:
     Position selectOneCell(set<Position>& unobserved, RandomGen& random) override ;
     RETURN_STATE collapse(Position& position, RandomGen& random, bool print_step = false) override ;
     void propogate(set<Position>& unobserved, Position& position, bool print_process = false) override;
+    void validateNeighbor() override;
 
     Grid getGrid() override{
         return grid;
@@ -80,7 +83,11 @@ public:
     myTimer timer;
     Position selectOneCell(set<Position>& unobserved, RandomGen& random) override ;
     RETURN_STATE collapse(Position& position, RandomGen& random, bool print_step = false) override ;
-    void propogate(set<Position>& unobserved, Position& position, bool print_process = false);
+    void propogate(set<Position>& unobserved, Position& position, bool print_process = false) override;
+    void validateNeighbor() override {
+        component->validateNeighbor();
+    };
+
     Grid getGrid() override{
         return component->getGrid();
     };
@@ -130,6 +137,7 @@ public:
     Position selectOneCell(set<Position>& unobserved, RandomGen& random) override ;
     RETURN_STATE collapse(Position& position, RandomGen& random, bool print_step = false) override ;
     void propogate(set<Position>& unobserved, Position& position, bool print_process = false) override;
+    void validateNeighbor() override;
 
     Grid getGrid() override{
         Grid grid = Grid(H, vector<Superposition>(W));
@@ -137,7 +145,9 @@ public:
         {
             for (size_t w = 0; w < W; w++)
             {
-                grid[h][w] = {(int) std::bit_width(this->grid[h][w]) - 1};
+                int value = (int)std::bit_width(this->grid[h][w]) - 1;
+                if(value >= 0)
+                    grid[h][w] = { value };
             }
             
         }

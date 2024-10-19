@@ -60,7 +60,7 @@ void naive_WFC::propogate(set<Position> &unobserved, Position &position, bool pr
             distance_record = std::make_pair(h - position.first, w - position.second);
         }
 
-        auto propogate = [&](Position dir, vector<set<int>>& rules){
+        auto propogate_dir = [&](Position dir, vector<set<int>>& rules){
             int neighbor_h = h + dir.first;
             int neighbor_w = w + dir.second;
             auto neighbor_pos = std::make_pair(neighbor_h, neighbor_w);
@@ -94,10 +94,10 @@ void naive_WFC::propogate(set<Position> &unobserved, Position &position, bool pr
             }
         };
 
-        propogate(std::make_pair(1, 0), rules->top_bottom_rules); // to bottom
-        propogate(std::make_pair(-1, 0), rules->bottom_top_rules); // to top
-        propogate(std::make_pair(0, 1), rules->left_right_rules); // to right
-        propogate(std::make_pair(0, -1), rules->right_left_rules); // to left
+        propogate_dir(std::make_pair(1, 0), rules->top_bottom_rules); // to bottom
+        propogate_dir(std::make_pair(-1, 0), rules->bottom_top_rules); // to top
+        propogate_dir(std::make_pair(0, 1), rules->left_right_rules); // to right
+        propogate_dir(std::make_pair(0, -1), rules->right_left_rules); // to left
 
     }
 
@@ -105,6 +105,56 @@ void naive_WFC::propogate(set<Position> &unobserved, Position &position, bool pr
         std::cout << "BF search: " << processed.size() << "\tDistance: " <<max_distance<< " (" << 
             distance_record.first << "," << distance_record.second<<")\n\n";
     }
+}
+
+void naive_WFC::validateNeighbor()
+{
+    auto validate = [&](Position pos, Position dir, vector<set<int>>& rules){
+        int h = pos.first;
+        int w = pos.second;
+        auto& sp = grid[h][w];
+        
+        int neighbor_h = h + dir.first;
+        int neighbor_w = w + dir.second;
+        auto neighbor_pos = std::make_pair(neighbor_h, neighbor_w);
+
+        if(neighbor_h < 0 || neighbor_h >= H || neighbor_w < 0 || neighbor_w >= W){
+            return true;
+        }
+        auto& neighbor_sp = grid[neighbor_h][neighbor_w];
+
+        Superposition vaild_state;
+        for (int state: sp)
+        {
+            auto& rule = rules[state];
+            vaild_state.insert(rule.begin(), rule.end());
+        }
+
+        // all patterns in neighbor most in vaild state.
+        // neighbor is subset of vaild state.
+        // neighbor - vaild = 0
+        Superposition result = set_difference(neighbor_sp, vaild_state);
+        return result.size() == 0;
+    };
+    
+
+    for (size_t h = 0; h < H; h++)
+    {
+        for (size_t w = 0; w < W; w++)
+        {
+            auto pos = std::make_pair(h, w);
+            bool vaild = validate(pos, std::make_pair(1, 0), rules->top_bottom_rules) &&
+                        validate(pos, std::make_pair(-1, 0), rules->bottom_top_rules) &&
+                        validate(pos, std::make_pair(0, 1), rules->left_right_rules) && 
+                        validate(pos, std::make_pair(0, -1), rules->right_left_rules);
+
+            if (vaild == false){
+                std::cout << "Invaild pattern at ("
+                     << h << ", " << w  << ")\n";
+            }
+        }
+        
+    }    
 }
 
 Position profiling_WFC::selectOneCell(set<Position> &unobserved, RandomGen &random)
@@ -195,7 +245,7 @@ void bit_WFC::propogate(set<Position> &unobserved, Position &position, bool prin
             distance_record = std::make_pair(h - position.first, w - position.second);
         }
 
-        auto propogate = [&](Position dir, vector<ull>& rules){
+        auto propogate_dir = [&](Position dir, vector<ull>& rules){
             int neighbor_h = h + dir.first;
             int neighbor_w = w + dir.second;
             auto neighbor_pos = std::make_pair(neighbor_h, neighbor_w);
@@ -231,15 +281,15 @@ void bit_WFC::propogate(set<Position> &unobserved, Position &position, bool prin
                 neighbor_sp = result;
             }
             
-            if(std::popcount(neighbor_sp) == 1){
+            if(std::popcount(neighbor_sp) == 1){  
                 unobserved.erase(unobserved_it);
             }
         };
 
-        propogate(std::make_pair(1, 0),  top_bottom_rules); // to bottom
-        propogate(std::make_pair(-1, 0), bottom_top_rules); // to top
-        propogate(std::make_pair(0, 1),  left_right_rules); // to right
-        propogate(std::make_pair(0, -1), right_left_rules); // to left
+        propogate_dir(std::make_pair(1, 0),  top_bottom_rules); // to bottom
+        propogate_dir(std::make_pair(-1, 0), bottom_top_rules); // to top
+        propogate_dir(std::make_pair(0, 1),  left_right_rules); // to right
+        propogate_dir(std::make_pair(0, -1), right_left_rules); // to left
 
     }
 
@@ -247,4 +297,61 @@ void bit_WFC::propogate(set<Position> &unobserved, Position &position, bool prin
         std::cout << "BF search: " << processed.size() << "\tDistance: " <<max_distance<< " (" << 
             distance_record.first << "," << distance_record.second<<")\n\n";
     }
+}
+
+void bit_WFC::validateNeighbor()
+{
+    auto validate = [&](Position pos, Position dir, vector<ull>& rules){
+        int h = pos.first;
+        int w = pos.second;
+        auto sp = grid[h][w];
+        
+        int neighbor_h = h + dir.first;
+        int neighbor_w = w + dir.second;
+        auto neighbor_pos = std::make_pair(neighbor_h, neighbor_w);
+
+        if(neighbor_h < 0 || neighbor_h >= H || neighbor_w < 0 || neighbor_w >= W){
+            return true;
+        }
+        auto neighbor_sp = grid[neighbor_h][neighbor_w];
+
+        ull vaild_state = 0;
+        auto tmp_sp = sp;
+        for (size_t i = 0; i < std::bit_width(sp); i++)
+        {
+            /* code */
+            if(tmp_sp & 1u){
+                auto rule = rules[i];
+
+                vaild_state |= rule;
+
+            }
+            tmp_sp >>= 1u;
+        }
+
+        // all patterns in neighbor most in vaild state.
+        // neighbor is subset of vaild state.
+        // neighbor - vaild = 0
+        ull result = (neighbor_sp ^ vaild_state) & neighbor_sp;
+        return result == 0;
+    };
+    
+
+    for (size_t h = 0; h < H; h++)
+    {
+        for (size_t w = 0; w < W; w++)
+        {
+            auto pos = std::make_pair(h, w);
+            bool vaild = validate(pos, std::make_pair(1, 0), top_bottom_rules) &&
+                        validate(pos, std::make_pair(-1, 0), bottom_top_rules) &&
+                        validate(pos, std::make_pair(0, 1),  left_right_rules) && 
+                        validate(pos, std::make_pair(0, -1), right_left_rules);
+
+            if (vaild == false){
+                std::cout << "Invaild pattern at ("
+                     << h << ", " << w  << ")\n";
+            }
+        }
+        
+    }        
 }
