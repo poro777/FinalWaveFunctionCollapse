@@ -40,19 +40,20 @@ void naive_WFC::propogate(set<Position> &unobserved, Position &position, bool pr
 {
     // BFS
     std::queue<Position> q;
-    std::set<Position> processed;
+    int processed = 0;
     q.push(position);
 
     int max_distance = 0;
     Position distance_record;
     
-    while (!q.empty()) {
+    bool stop = false;
+    while (!q.empty() && !stop) {
         Position curr = q.front();
         q.pop();
         int h = curr.first;
         int w = curr.second;
         auto& sp = grid[h][w];
-        processed.insert(curr);
+        processed++;
         
         auto distance = abs(h - position.first) + abs(w - position.second);
         if(distance > max_distance){
@@ -67,7 +68,7 @@ void naive_WFC::propogate(set<Position> &unobserved, Position &position, bool pr
 
             auto unobserved_it = unobserved.find(neighbor_pos);
             if(neighbor_h < 0 || neighbor_h >= H || neighbor_w < 0 || neighbor_w >= W
-                || unobserved_it == unobserved.end() || processed.find(neighbor_pos) != processed.end()){
+                || unobserved_it == unobserved.end()){
                 return;
             }
             auto& neighbor_sp = grid[neighbor_h][neighbor_w];
@@ -92,6 +93,9 @@ void naive_WFC::propogate(set<Position> &unobserved, Position &position, bool pr
             if(neighbor_sp.size() == 1){
                 unobserved.erase(unobserved_it);
             }
+            else if(neighbor_sp.size() == 0){
+                stop = true;
+            }
         };
 
         propogate_dir(std::make_pair(1, 0), rules->top_bottom_rules); // to bottom
@@ -102,7 +106,7 @@ void naive_WFC::propogate(set<Position> &unobserved, Position &position, bool pr
     }
 
     if(print_process){
-        std::cout << "BF search: " << processed.size() << "\tDistance: " <<max_distance<< " (" << 
+        std::cout << "BF search: " << processed << "\tDistance: " <<max_distance<< " (" << 
             distance_record.first << "," << distance_record.second<<")\n\n";
     }
 }
@@ -209,13 +213,13 @@ RETURN_STATE bit_WFC::collapse(Position &position, RandomGen &random, bool print
     // keep n-th 1, the other 1 to 0 
     auto n = findNthSetBit(state, 1 + (random.randomInt() % size));
     // collapse to one pattern
-    state = 1 << n;
+    state = 1ull << n;
 
     if(print_step){
         std::cout << position.first << " " << position.second;
         std::cout << " collapse to " << n << "\n";
-        print_grid_bits(grid);
-        //std::cout << "\n";
+        printGrid();
+        std::cout << "\n";
     }
 
     return OK;
@@ -225,19 +229,19 @@ void bit_WFC::propogate(set<Position> &unobserved, Position &position, bool prin
 {
     // BFS
     std::queue<Position> q;
-    std::set<Position> processed;
+    int processed = 0;
     q.push(position);
 
     int max_distance = 0;
     Position distance_record;
-    
-    while (!q.empty()) {
+    bool stop = false;
+    while (!q.empty() && !stop) {
         Position curr = q.front();
         q.pop();
         int h = curr.first;
         int w = curr.second;
         auto sp = grid[h][w];
-        processed.insert(curr);
+        processed++;
 
         auto distance = abs(h - position.first) + abs(w - position.second);
         if(distance > max_distance){
@@ -252,23 +256,19 @@ void bit_WFC::propogate(set<Position> &unobserved, Position &position, bool prin
 
             auto unobserved_it = unobserved.find(neighbor_pos);
             if(neighbor_h < 0 || neighbor_h >= H || neighbor_w < 0 || neighbor_w >= W
-                || unobserved_it == unobserved.end() || processed.find(neighbor_pos) != processed.end()){
+                || unobserved_it == unobserved.end()){
                 return;
             }
             auto& neighbor_sp = grid[neighbor_h][neighbor_w];
 
             ull vaild_state = 0;
-            auto tmp_sp = sp;
-            for (size_t i = 0; i < std::bit_width(sp); i++)
+            auto bwidth = std::bit_width(sp);
+            for (ull i = 0; i < bwidth; i++)
             {
-                /* code */
-                if(tmp_sp & 1u){
+                if((sp >> i) & 1ull){
                     auto rule = rules[i];
-
                     vaild_state |= rule;
-
                 }
-                tmp_sp >>= 1u;
             }
 
             // remove elemnet not in vaild_state
@@ -281,8 +281,12 @@ void bit_WFC::propogate(set<Position> &unobserved, Position &position, bool prin
                 neighbor_sp = result;
             }
             
-            if(std::popcount(neighbor_sp) == 1){  
+            auto size = std::popcount(neighbor_sp);
+            if(size == 1){  
                 unobserved.erase(unobserved_it);
+            }
+            else if(size == 0){
+                stop = true;
             }
         };
 
@@ -294,7 +298,7 @@ void bit_WFC::propogate(set<Position> &unobserved, Position &position, bool prin
     }
 
     if(print_process){
-        std::cout << "BF search: " << processed.size() << "\tDistance: " <<max_distance<< " (" << 
+        std::cout << "BF search: " << processed << "\tDistance: " <<max_distance<< " (" << 
             distance_record.first << "," << distance_record.second<<")\n\n";
     }
 }
@@ -320,13 +324,13 @@ void bit_WFC::validateNeighbor()
         for (size_t i = 0; i < std::bit_width(sp); i++)
         {
             /* code */
-            if(tmp_sp & 1u){
+            if(tmp_sp & 1ull){
                 auto rule = rules[i];
 
                 vaild_state |= rule;
 
             }
-            tmp_sp >>= 1u;
+            tmp_sp >>= 1ull;
         }
 
         // all patterns in neighbor most in vaild state.

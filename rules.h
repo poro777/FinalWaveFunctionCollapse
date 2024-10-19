@@ -343,85 +343,121 @@ public:
     Summer(){
         patternImagesRoot = "./data/Summer/";
 
-        M = 28;
+        M = 40;
 
         top_bottom_rules = vector<Superposition>(M);
         bottom_top_rules = vector<Superposition>(M);
         left_right_rules = vector<Superposition>(M);
         right_left_rules = vector<Superposition>(M);
 
+        Superposition sea = {13,14,15};
+        Superposition grass = {12};
+
         Superposition grass_at_top =   {0,2,6,7,10,11,12, /* part 1*/ 
-                                         18, 19, 22};       /*part 2*/
+                                         18, 19, 22, /*part 2*/
+                                        34, 38,39/*part 3*/ };      
         Superposition grass_at_bottom = {0,2,4,5,8,9,12,
-                                        16,17,20};
+                                        16,17,20,
+                                        32,36, 37};
         Superposition grass_at_left =   {1,3,4,7,8,11,12,
-                                        16,19, 23};
+                                        16,19, 23,
+                                        35,36,39};
         Superposition grass_at_right =  {1,3,5,6,9,10,12,
-                                        17,18, 21};
+                                        17,18, 21,
+                                        33,37,38};
+
 
         Superposition water_at_top =    {13,14,15,20,24,25};
         Superposition water_at_bottom = {13,14,15,22,26,27};
         Superposition water_at_left =   {13,14,15,21,25,26};
         Superposition water_at_right =  {13,14,15,23,24,27};
 
-        top_bottom_rules[0]  = {12};
+        Superposition road_at_top =    {30,31,32};
+        Superposition road_at_bottom = {28,29,34};
+        Superposition road_at_left =   {28,31,33};
+        Superposition road_at_right =  {29,30,35};
+
+        top_bottom_rules[0]  = grass;
         top_bottom_rules[1]  = {1, 4, 9};
-        top_bottom_rules[2]  = {12};
+        top_bottom_rules[2]  = grass;
         top_bottom_rules[3]  = {3, 5, 8};
-        top_bottom_rules[4]  = {12};
-        top_bottom_rules[5]  = {12};
+        top_bottom_rules[4]  = grass;
+        top_bottom_rules[5]  = grass;
         top_bottom_rules[6]  = {3};
         top_bottom_rules[7]  = {1};
-        top_bottom_rules[8]  = {12};
-        top_bottom_rules[9]  = {12};
+        top_bottom_rules[8]  = grass;
+        top_bottom_rules[9]  = grass;
         top_bottom_rules[10] = {1};
         top_bottom_rules[11] = {3};
         top_bottom_rules[12] = grass_at_top;
         top_bottom_rules[13] = water_at_top;
         top_bottom_rules[14] = water_at_top;
         top_bottom_rules[15] = water_at_top;
-        top_bottom_rules[16] = {12};
-        top_bottom_rules[17] = {12};
+        top_bottom_rules[16] = grass_at_top;
+        top_bottom_rules[17] = grass_at_top;
         top_bottom_rules[18] = {21};
         top_bottom_rules[19] = {23};
-        top_bottom_rules[20] = {12};
+        top_bottom_rules[20] = grass_at_top;
         top_bottom_rules[21] = {17,21,26};
-        top_bottom_rules[22] = {13,14,15};
+        top_bottom_rules[22] = sea;
         top_bottom_rules[23] = {16,23,27};
         top_bottom_rules[24] = {23};
         top_bottom_rules[25] = {21};
-        top_bottom_rules[26] = {13,14,15};
-        top_bottom_rules[27] = {13,14,15};
+        top_bottom_rules[26] = sea;
+        top_bottom_rules[27] = sea;
+        top_bottom_rules[28] = road_at_top;
+        top_bottom_rules[29] = road_at_top;
+        top_bottom_rules[30] = {35, 36};
+        top_bottom_rules[31] = {33, 37};
+        top_bottom_rules[32] = grass_at_top;
+        top_bottom_rules[33] = {28,33,37};
+        top_bottom_rules[34] = road_at_top;
+        top_bottom_rules[35] = {29,35,36};
+        top_bottom_rules[36] = grass_at_top;
+        top_bottom_rules[37] = grass_at_top;
+        top_bottom_rules[38] = {28,33};
+        top_bottom_rules[39] = {29,35};
 
         left_right_rules[0]  = {0, 6, 9};
-        left_right_rules[1]  = {12};
+        left_right_rules[1]  = grass;
         left_right_rules[2]  = {2, 5, 10};
-        left_right_rules[3]  = {12};
+        left_right_rules[3]  = grass;
         left_right_rules[4]  = {2};
-        left_right_rules[5]  = {12};
-        left_right_rules[6]  = {12};
+        left_right_rules[5]  = grass;
+        left_right_rules[6]  = grass;
         left_right_rules[7]  = {0};
         left_right_rules[8]  = {0};
-        left_right_rules[9]  = {12};
-        left_right_rules[10] = {12};
+        left_right_rules[9]  = grass;
+        left_right_rules[10] = grass;
         left_right_rules[11] = {2};
         left_right_rules[12] = grass_at_left;
         left_right_rules[13] = water_at_left;
         left_right_rules[14] = water_at_left;
         left_right_rules[15] = water_at_left;
         left_right_rules[16] = {20};
-        left_right_rules[17] = {12};
-        left_right_rules[18] = {12};
+        left_right_rules[17] = grass_at_left;
+        left_right_rules[18] = grass_at_left;
         left_right_rules[19] = {22};
         left_right_rules[20] = {17, 20,24};
-        left_right_rules[21] = {12};
+        left_right_rules[21] = grass_at_left;
         left_right_rules[22] = {18, 22, 27};
-        left_right_rules[23] = {13,14,15};
-        left_right_rules[24] = {13,14,15};
+        left_right_rules[23] = sea;
+        left_right_rules[24] = sea;
         left_right_rules[25] = {20};
         left_right_rules[26] = {22};
-        left_right_rules[27] = {13,14,15};
-
+        left_right_rules[27] = sea;
+        left_right_rules[28] = {34,38};
+        left_right_rules[29] = road_at_left;
+        left_right_rules[30] = road_at_left;
+        left_right_rules[31] = {32,37};
+        left_right_rules[32] = {30,32,37};
+        left_right_rules[33] = grass_at_left;
+        left_right_rules[34] = {29,34,38};
+        left_right_rules[35] = road_at_left;
+        left_right_rules[36] = {30,32};
+        left_right_rules[37] = grass_at_left;
+        left_right_rules[38] = grass_at_left;
+        left_right_rules[39] = {30,34};
         mirror();
     }
 

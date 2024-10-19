@@ -106,9 +106,9 @@ private:
 public:
     bit_WFC(int H, int W, shared_ptr<Rule> rules): WFC(H,W,rules){
         auto sp_to_bits = [](Superposition& sp){
-            ull n = 0;
-            for(auto pattern: sp){
-                n += (1 << pattern);
+            ull n = 0ull;
+            for(ull pattern: sp){
+                n += (1ull << pattern);
             }
             return n;
         };
