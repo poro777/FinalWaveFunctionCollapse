@@ -93,6 +93,9 @@ int main(int argc, char *argv[]){
     case 2:
         rule = std::make_shared<Rules::Summer>();
         break;
+    case 3:
+        rule = std::make_shared<Rules::RPGMap>();
+        break;
     default:
         rule = std::make_shared<Rules::Example>();
         break;

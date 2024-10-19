@@ -99,6 +99,117 @@ public:
     }
 };
 
+class RPGMap: public Rule
+{
+/* TODO : Example for Rule, there are 7 TODO in this Class */
+public:
+    RPGMap(){
+        // TODO 1 : assign image root directory
+        patternImagesRoot = "./data/rpgmap/";
+
+        // TODO 2 : assign total number of pattern
+        M = 34;
+
+        // TODO 3 : init all rules to M
+        top_bottom_rules = vector<Superposition>(M);
+        bottom_top_rules = vector<Superposition>(M);
+        left_right_rules = vector<Superposition>(M);
+        right_left_rules = vector<Superposition>(M);
+        /* TODO 4 : 
+        design 'top_bottom_rules' rules: 
+            If the current pattern is at the top,
+            What patterns can be connected to the bottom?
+        example:
+            top_bottom_rules[0] = {4, 8};
+            there are two rules
+            | 0 |  and  | 0 |
+            | 4 |       | 8 |
+        the index is same as in `patternImagesRoot`
+
+        */
+        top_bottom_rules[0] = {1, 2, 16};
+        top_bottom_rules[1] = {1, 2, 16};
+        top_bottom_rules[2] = {33};
+        top_bottom_rules[3] = {4, 5, 9, 12};
+        top_bottom_rules[4] = {4, 5, 9, 12, 15};
+        top_bottom_rules[5] = {33};
+        top_bottom_rules[6] = {7, 8, 10};
+        top_bottom_rules[7] = {7, 8, 10};
+        top_bottom_rules[8] = {33};
+        top_bottom_rules[9] = {7, 8, 10};
+        top_bottom_rules[10] = {7, 8, 10};
+        top_bottom_rules[11] = {22, 23};
+        top_bottom_rules[12] = {33};
+        top_bottom_rules[13] = {33};
+        top_bottom_rules[14] = {22, 23};
+        top_bottom_rules[15] = {1, 2, 16};
+        top_bottom_rules[16] = {1, 2, 16};
+        top_bottom_rules[17] = {22, 23};
+        top_bottom_rules[18] = {20};
+        top_bottom_rules[19] = {17, 19, 20};
+        top_bottom_rules[20] = {33};
+        top_bottom_rules[21] = {22, 23};
+        top_bottom_rules[22] = {22, 23};
+        top_bottom_rules[23] = {33};
+        top_bottom_rules[24] = {26, 27};
+        top_bottom_rules[25] = {25, 26};
+        top_bottom_rules[26] = {33};
+        top_bottom_rules[27] = {11, 14, 17, 18, 21, 24, 28, 29, 32};
+        top_bottom_rules[28] = {14, 18, 21, 24, 28, 29, 30, 32};
+        top_bottom_rules[29] = {33};
+        top_bottom_rules[30] = {14, 21, 31};
+        top_bottom_rules[31] = {14, 21, 31};
+        top_bottom_rules[32] = {33};
+        top_bottom_rules[33] = {0, 3, 6, 13, 14, 18, 21, 24, 27, 30, 33};
+
+
+
+        
+        /* TODO 5 : 
+        design 'left_right_rules' rules: 
+            If the current pattern is at the left,
+            What patterns can be connected to the right?
+        */
+        left_right_rules[0] = {3, 6};
+        left_right_rules[1] = {4, 7, 9, 10};
+        left_right_rules[2] = {5, 8, 12, 15};
+        left_right_rules[3] = {3, 6};
+        left_right_rules[4] = {4, 7, 9, 10};
+        left_right_rules[5] = {5, 8, 12, 15};
+        left_right_rules[6] = {33};
+        left_right_rules[7] = {33};
+        left_right_rules[8] = {33};
+        left_right_rules[9] = {5, 8, 12, 15};
+        left_right_rules[10] = {33};
+        left_right_rules[11] = {14, 17, 21, 24};
+        left_right_rules[12] = {5, 8, 12, 15};
+        left_right_rules[13] = {33};
+        left_right_rules[14] = {14, 17, 21, 24};
+        left_right_rules[15] = {4, 7, 9, 10};
+        left_right_rules[16] = {4, 7, 9, 10};
+        left_right_rules[17] = {33};
+        left_right_rules[18] = {14, 17, 21, 24};
+        left_right_rules[19] = {11, 22, 25};
+        left_right_rules[20] = {11, 23, 26};
+        left_right_rules[21] = {14,17,21,24};
+        left_right_rules[22] = {11,22,25};
+        left_right_rules[23] = {23,26};
+        left_right_rules[24] = {33};
+        left_right_rules[25] = {33};
+        left_right_rules[26] = {33};
+        left_right_rules[27] = {33};
+        left_right_rules[28] = {33};
+        left_right_rules[29] = {2, 5, 12, 15, 16, 29};
+        left_right_rules[30] = {33};
+        left_right_rules[31] = {33};
+        left_right_rules[32] = {32, 33};
+        left_right_rules[33] = {0, 1, 2, 13, 16, 18, 19, 20, 27, 28, 30, 31, 32, 33};
+        mirror();
+    }
+            /* name for this class */
+    std::string name(){/* TODO 7 */ return "RPGMap";}
+};
+
 class Road: public Rule
     {
     private:
