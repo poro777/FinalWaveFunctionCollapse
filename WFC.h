@@ -102,16 +102,13 @@ private:
     vector<ull> left_right_rules; 
     vector<ull> right_left_rules;
 
+    ull sp_to_bits(const Superposition& sp);
+    Superposition bits_to_sp(ull value);
+    void bits_to_sp(ull state, Superposition& out_sp);
+
     /* data */
 public:
     bit_WFC(int H, int W, shared_ptr<Rule> rules): WFC(H,W,rules){
-        auto sp_to_bits = [](Superposition& sp){
-            ull n = 0ull;
-            for(ull pattern: sp){
-                n += (1ull << pattern);
-            }
-            return n;
-        };
         assert(rules->M <= 64);
 
         auto init = rules->initValue();
@@ -140,25 +137,16 @@ public:
     void validateNeighbor() override;
 
     Grid getGrid() override{
-        Grid grid = Grid(H, vector<Superposition>(W));
+        Grid sp_grid = Grid(H, vector<Superposition>(W));
         for (size_t h = 0; h < H; h++)
         {
             for (size_t w = 0; w < W; w++)
             {
                 ull state = this->grid[h][w];
-                auto bwidth = std::bit_width(state);
-                auto& sp = grid[h][w];
-                for (size_t i = 0; i < bwidth; i++)
-                {
-                    /* code */
-                    if(state & 1u){
-                        sp.insert(i);
-                    }
-                    state >>= 1u;
-                }
+                bits_to_sp(state, sp_grid[h][w]);
             }
             
         }
-        return grid;
+        return sp_grid;
     }
 };

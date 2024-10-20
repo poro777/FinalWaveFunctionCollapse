@@ -46,7 +46,7 @@ void Rules::Rule::writeImage(Grid &grid)
 
     assert(patterns.size() == M);
 
-    std::cout << "Making image...\n";
+    std::cout << "\nMaking image...\n";
     int H = grid.size();
     int W = grid[0].size();
 
@@ -58,8 +58,21 @@ void Rules::Rule::writeImage(Grid &grid)
 
     int channels = patternShape.channels;  // RGB
 
+    std::shared_ptr<unsigned char[]> image = nullptr;
     // Allocate memory for the image (RGB: 3 channels)
-    std::shared_ptr<unsigned char[]> image(new unsigned char[width * height * channels](), std::default_delete<unsigned char[]>());
+    try
+    {
+        std::cout << "Image shape = (" << height << ", " << width << ", " << channels << "). Total: "
+            << width * height * channels * sizeof(unsigned char) << " B.\n";
+        image = std::shared_ptr<unsigned char[]>(new unsigned char[width * height * channels](), std::default_delete<unsigned char[]>());
+    }
+    catch(const std::exception& e)
+    {
+        std::cerr << "Failed to create image: "
+                     << e.what() << '\n';
+        return;
+    }
+    
 
     // Fill the array with some pattern
     for (size_t h = 0; h < H; h++)

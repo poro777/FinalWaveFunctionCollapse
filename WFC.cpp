@@ -191,6 +191,34 @@ void profiling_WFC::propogate(set<Position> &unobserved, Position &position, boo
     timer.end(name);
 }
 
+ull bit_WFC::sp_to_bits(const Superposition &sp)
+{
+    ull n = 0;
+    for(ull pattern: sp){
+        n += (1ull << pattern);
+    }
+    return n;
+}
+
+Superposition bit_WFC::bits_to_sp(ull state)
+{
+    Superposition sp = {};
+    bits_to_sp(state, sp);
+    return sp;
+}
+
+void bit_WFC::bits_to_sp(ull state, Superposition &out_sp)
+{
+    int bwidth = std::bit_width(state);
+    for (int i = 0; i < bwidth; i++)
+    {
+        if(state & 1ull){
+            out_sp.insert(i);
+        }
+        state >>= 1ull;
+    }
+}
+
 Position bit_WFC::selectOneCell(set<Position> &unobserved, RandomGen &random)
 {
     auto position_it = unobserved.begin();
@@ -320,17 +348,13 @@ void bit_WFC::validateNeighbor()
         auto neighbor_sp = grid[neighbor_h][neighbor_w];
 
         ull vaild_state = 0;
-        auto tmp_sp = sp;
-        for (size_t i = 0; i < std::bit_width(sp); i++)
+        auto bwidth = std::bit_width(sp);
+        for (ull i = 0; i < bwidth; i++)
         {
-            /* code */
-            if(tmp_sp & 1ull){
+            if((sp >> i) & 1ull){
                 auto rule = rules[i];
-
                 vaild_state |= rule;
-
             }
-            tmp_sp >>= 1ull;
         }
 
         // all patterns in neighbor most in vaild state.
