@@ -40,7 +40,8 @@ void naive_WFC::propogate(set<Position> &unobserved, Position &position, bool pr
 {
     // BFS
     std::queue<Position> q;
-    int processed = 0;
+    set<Position> processed;
+    int count = 0;
     q.push(position);
 
     int max_distance = 0;
@@ -53,7 +54,8 @@ void naive_WFC::propogate(set<Position> &unobserved, Position &position, bool pr
         int h = curr.first;
         int w = curr.second;
         auto& sp = grid[h][w];
-        processed++;
+        processed.insert(curr);
+        count++;
         
         auto distance = abs(h - position.first) + abs(w - position.second);
         if(distance > max_distance){
@@ -106,7 +108,7 @@ void naive_WFC::propogate(set<Position> &unobserved, Position &position, bool pr
     }
 
     if(print_process){
-        std::cout << "BF search: " << processed << "\tDistance: " <<max_distance<< " (" << 
+        std::cout << "BF search: " << count << "\tCells: " << processed.size() << "\tDistance: " <<max_distance<< " (" << 
             distance_record.first << "," << distance_record.second<<")\n\n";
     }
 }
@@ -257,7 +259,8 @@ void bit_WFC::propogate(set<Position> &unobserved, Position &position, bool prin
 {
     // BFS
     std::queue<Position> q;
-    int processed = 0;
+    set<Position> processed;
+    int count = 0;
     q.push(position);
 
     int max_distance = 0;
@@ -269,7 +272,8 @@ void bit_WFC::propogate(set<Position> &unobserved, Position &position, bool prin
         int h = curr.first;
         int w = curr.second;
         auto sp = grid[h][w];
-        processed++;
+        processed.insert(curr);
+        count++;
 
         auto distance = abs(h - position.first) + abs(w - position.second);
         if(distance > max_distance){
@@ -326,7 +330,7 @@ void bit_WFC::propogate(set<Position> &unobserved, Position &position, bool prin
     }
 
     if(print_process){
-        std::cout << "BF search: " << processed << "\tDistance: " <<max_distance<< " (" << 
+        std::cout << "BF search: " << count << "\tCells: " << processed.size() << "\tDistance: " <<max_distance<< " (" << 
             distance_record.first << "," << distance_record.second<<")\n\n";
     }
 }
