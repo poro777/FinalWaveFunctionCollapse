@@ -6,7 +6,9 @@
 #include <random>
 #include <memory>
 #include <iostream>
+#include <unordered_set>
 
+using std::unordered_set;
 using std::shared_ptr;
 using std::set;
 using std::vector;
@@ -18,6 +20,15 @@ using Superposition = std::set<int>;
 using Cell = Superposition;
 using Grid = std::vector<std::vector<Superposition>>;
 using Position = std::pair<int,int>;
+
+struct pair_hash {
+    template <class T1, class T2>
+    std::size_t operator() (const std::pair<T1, T2>& p) const {
+        auto hash1 = std::hash<T1>{}(p.first);
+        auto hash2 = std::hash<T2>{}(p.second);
+        return hash1 ^ (hash2 << 1); // combine the two hash values
+    }
+};
 
 template <typename T>
 int findNthSetBit(T bits, int N) {

@@ -15,6 +15,52 @@
 #include "setOperator.h"
 #include "rules.h"
 
+template <typename Set>
+bool run(shared_ptr<WFC> wfc_solver, long long seed, bool print_step, bool print_process){
+    RandomGen random(seed);
+
+    int H = wfc_solver->getH();
+    int W = wfc_solver->getW();
+
+    Set unobserved;
+    for (int h = 0; h < H; h++)
+    {
+        for (int w = 0; w < W; w++)
+        {
+            unobserved.insert(std::make_pair(h, w));
+        }
+    }
+
+    int i = -1;
+    while (unobserved.size() > 0)
+    {
+        i++;
+        if(print_process){
+            std::cout << "Iter: " << i << "\n";
+            std::cout <<"unobserved: " << unobserved.size() << "\n";
+        }
+        
+        // collapse
+        auto selected_position = wfc_solver->selectOneCell(unobserved, random);
+
+        auto collapseState = wfc_solver->collapse(selected_position, random, print_step);
+
+        if(collapseState == FAILED){
+            std::cout << "-Failed- unobserved(rate):" << unobserved.size() << "("<<unobserved.size() / float(H*W) <<")"<< "\n";
+            return false;
+        }
+
+        auto it_selected_position = unobserved.find(selected_position);
+        assert(it_selected_position != unobserved.end());
+        unobserved.erase(it_selected_position);
+
+        // propogate
+        wfc_solver->propogate(unobserved, selected_position, print_process);
+    }
+
+    return true;
+}
+
 int main(int argc, char *argv[]){
     // > make
     // > time ./a.out [long_options]
@@ -23,6 +69,7 @@ int main(int argc, char *argv[]){
     int ruleType = 0;
     long long seed = -1;
     int bitOp = 1;
+    int selection = 0;
 
     // flags
     int print_rules = false;
@@ -40,6 +87,7 @@ int main(int argc, char *argv[]){
         {"rule", required_argument, 0, 'r'},
         {"seed", required_argument, 0, 's'},
         {"bitOp", required_argument, 0, 'b'},
+        {"selection", required_argument, 0, 'c'},
 
         {"print-time", no_argument, &print_time, 1},
         {"print-rules", no_argument, &print_rules, 1},
@@ -55,7 +103,7 @@ int main(int argc, char *argv[]){
     int opt;
 
     // Parse options
-    while ((opt = getopt_long(argc, argv, "w:h:r:s:b:", long_options, &option_index)) != -1) {
+    while ((opt = getopt_long(argc, argv, "w:h:r:s:b:c:", long_options, &option_index)) != -1) {
         switch (opt) {
             case 'w':
                 W = std::stoi(optarg); // Assign width
@@ -72,6 +120,9 @@ int main(int argc, char *argv[]){
             case 'b':
                 bitOp = std::stoi(optarg);
                 break;
+            case 'c':
+                selection = std::stoi(optarg);
+                break;                
             case 0: // long flag opt
                 break;
             default:
@@ -102,61 +153,36 @@ int main(int argc, char *argv[]){
     } 
     
     std::cout << "Running\n" << "H="<<H << ", W="<<W  << ", Rule: " << rule->name() << "\n";
-    RandomGen random(seed);
 
     shared_ptr<WFC> wfc_solver = nullptr;
     if(bitOp){
-        wfc_solver= std::make_shared<bit_WFC>(H, W, rule);
+        wfc_solver= std::make_shared<bit_WFC>(H, W, rule, selection);
     } 
     else{
-        wfc_solver= std::make_shared<naive_WFC>(H, W, rule);
+        wfc_solver= std::make_shared<naive_WFC>(H, W, rule, selection);
     }
 
     if(print_time){
         wfc_solver = std::make_shared<profiling_WFC>(wfc_solver);
     }
 
-    set<Position> unobserved;
-    for (int h = 0; h < H; h++)
-    {
-        for (int w = 0; w < W; w++)
-        {
-            unobserved.insert(std::make_pair(h, w));
-        }
-    }
-
     if(print_rules){
         rule->print();
     }
 
-    int i = -1;
-    bool finish = true;
-    while (unobserved.size() > 0)
-    {
-        i++;
-        if(print_process){
-            std::cout << "Iter: " << i << "\n";
-            std::cout <<"unobserved: " << unobserved.size() << "\n";
-        }
-        
-        // collapse
-        auto selected_position = wfc_solver->selectOneCell(unobserved, random);
 
-        auto collapseState = wfc_solver->collapse(selected_position, random, print_step);
-
-        if(collapseState == FAILED){
-            std::cout << "-Failed- unobserved(rate):" << unobserved.size() << "("<<unobserved.size() / float(H*W) <<")"<< "\n";
-            finish = false;
-            break;
-        }
-
-        auto it_selected_position = unobserved.find(selected_position);
-        assert(it_selected_position != unobserved.end());
-        unobserved.erase(it_selected_position);
-
-        // propogate
-        wfc_solver->propogate(unobserved, selected_position, print_process);
+    bool finish = false;
+    
+    if(selection == 1){
+        // random selection by call set.begin()
+        finish = run<unordered_set<Position, pair_hash>>(wfc_solver, seed, print_step, print_process);
     }
+    else{
+        // order selection by call set.begin()
+        // or use other implement
+        finish = run<set<Position>>(wfc_solver, seed, print_step, print_process);
+    }
+
 
     if(finish){
         wfc_solver->validateNeighbor();

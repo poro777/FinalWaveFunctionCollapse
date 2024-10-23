@@ -1,13 +1,22 @@
 #include "WFC.h"
 #include "utils.h"
 
-Position naive_WFC::selectOneCell(set<Position> &unobserved, RandomGen &random)
+template <typename Set>
+Position naive_WFC::impl_selectOneCell(Set &unobserved, RandomGen &random)
 {
-    
-    auto position_it = unobserved.begin();
-    std::advance(position_it, random.randomInt() % unobserved.size());
-
-    return *position_it;
+    if(selection <= 1){ // first element of order_set, unorderd_set
+        auto position_it = unobserved.begin();
+        return *position_it;
+    }
+    else if (selection == 2){ // full random
+        auto position_it = unobserved.begin();
+        std::advance(position_it, random.randomInt() % unobserved.size());
+        return *position_it;
+    }
+    else{
+        // implement other methods e.g. min entropy selection
+        throw std::logic_error("Method not yet implemented");
+    }
     
 }
 
@@ -36,7 +45,8 @@ RETURN_STATE naive_WFC::collapse(Position &position, RandomGen &random, bool pri
     
 }
 
-void naive_WFC::propogate(set<Position> &unobserved, Position &position, bool print_process)
+template <typename Set>
+void naive_WFC::impl_propogate(Set &unobserved, Position &position, bool print_process)
 {
     // BFS
     std::queue<Position> q;
@@ -174,6 +184,17 @@ Position profiling_WFC::selectOneCell(set<Position> &unobserved, RandomGen &rand
     return returnValue;
 }
 
+Position profiling_WFC::selectOneCell(unordered_set<Position, pair_hash> &unobserved, RandomGen &random)
+{
+    const char* name = "SelectOneCell()";  
+
+    timer.start(name);
+    auto returnValue = component->selectOneCell(unobserved, random);
+    timer.end(name);
+
+    return returnValue;
+}
+
 RETURN_STATE profiling_WFC::collapse(Position &position, RandomGen &random, bool print_step)
 {
     const char* name = "Collapse()";
@@ -186,6 +207,14 @@ RETURN_STATE profiling_WFC::collapse(Position &position, RandomGen &random, bool
 }
 
 void profiling_WFC::propogate(set<Position> &unobserved, Position &position, bool print_process)
+{
+    const char* name = "Propogate()";
+    timer.start(name);
+    component->propogate(unobserved, position, print_process);
+    timer.end(name);
+}
+
+void profiling_WFC::propogate(unordered_set<Position, pair_hash> &unobserved, Position &position, bool print_process)
 {
     const char* name = "Propogate()";
     timer.start(name);
@@ -221,12 +250,22 @@ void bit_WFC::bits_to_sp(ull state, Superposition &out_sp)
     }
 }
 
-Position bit_WFC::selectOneCell(set<Position> &unobserved, RandomGen &random)
+template <typename Set>
+Position bit_WFC::impl_selectOneCell(Set &unobserved, RandomGen &random)
 {
-    auto position_it = unobserved.begin();
-    std::advance(position_it, random.randomInt() % unobserved.size());
-
-    return *position_it;
+    if(selection <= 1){  // first element of order_set, unorderd_set
+        auto position_it = unobserved.begin();
+        return *position_it;
+    }
+    else if (selection == 2){ // full random
+        auto position_it = unobserved.begin();
+        std::advance(position_it, random.randomInt() % unobserved.size());
+        return *position_it;
+    }
+    else{
+        // implement other methods e.g. min entropy selection
+        throw std::logic_error("Method not yet implemented");
+    }
 }
 
 
@@ -255,7 +294,8 @@ RETURN_STATE bit_WFC::collapse(Position &position, RandomGen &random, bool print
     return OK;
 }
 
-void bit_WFC::propogate(set<Position> &unobserved, Position &position, bool print_process)
+template <typename Set>
+void bit_WFC::impl_propogate(Set &unobserved, Position &position, bool print_process)
 {
     // BFS
     std::queue<Position> q;

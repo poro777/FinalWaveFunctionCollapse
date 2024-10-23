@@ -14,6 +14,7 @@ enum RETURN_STATE {
 };
 
 using Rule = Rules::Rule;
+
 class WFC
 {
 private:
@@ -22,22 +23,32 @@ protected:
     int H = 0;
     int W = 0;
     shared_ptr<Rule> rules = nullptr;
+
+    int selection = 0; // mode of selectOneCell
 public:
     WFC(){};
-    WFC(int H, int W,  shared_ptr<Rule> rules):H(H), W(W), rules(rules){
+    WFC(int H, int W,  shared_ptr<Rule> rules, int selection):H(H), W(W), rules(rules), selection(selection){
 
     };
     ~WFC(){
 
     };
 
+    int getH(){return H;}
+    int getW(){return W;}
+
     void printGrid() {
         print_grid(getGrid());
     };
 
     virtual Position selectOneCell(set<Position>& unobserved, RandomGen& random) = 0;
+    virtual Position selectOneCell(unordered_set<Position, pair_hash>& unobserved, RandomGen& random) = 0;
+
     virtual RETURN_STATE collapse(Position& position, RandomGen& random, bool print) = 0;
+
     virtual void propogate(set<Position>& unobserved, Position& position, bool print) = 0;
+    virtual void propogate(unordered_set<Position, pair_hash>& unobserved, Position& position, bool print) = 0;
+
     virtual void validateNeighbor() {};
 
     virtual Grid getGrid() = 0;
@@ -47,18 +58,37 @@ class naive_WFC:public WFC
 {
 private:
     Grid grid;
-    /* data */
+
+    template <typename Set>
+    Position impl_selectOneCell(Set& unobserved, RandomGen& random);
+
+    template <typename Set>
+    void impl_propogate(Set& unobserved, Position& position, bool print_process = false);
+
 public:
-    naive_WFC(int H, int W, shared_ptr<Rule> rules): WFC(H,W,rules){
+    naive_WFC(int H, int W, shared_ptr<Rule> rules, int selection): WFC(H,W,rules, selection){
         grid = Grid(H, std::vector<Cell>(W, rules->initValue()));
 
     };
     ~naive_WFC(){
 
     };
-    Position selectOneCell(set<Position>& unobserved, RandomGen& random) override ;
+    Position selectOneCell(set<Position>& unobserved, RandomGen& random) override {
+        return impl_selectOneCell(unobserved,random);
+    };
+    Position selectOneCell(unordered_set<Position, pair_hash>& unobserved, RandomGen& random) override {
+        return impl_selectOneCell(unobserved,random);
+    };
+
     RETURN_STATE collapse(Position& position, RandomGen& random, bool print_step = false) override ;
-    void propogate(set<Position>& unobserved, Position& position, bool print_process = false) override;
+
+    void propogate(set<Position>& unobserved, Position& position, bool print_process = false) override {
+        return impl_propogate(unobserved, position, print_process);
+    };
+    void propogate(unordered_set<Position, pair_hash>& unobserved, Position& position, bool print_process = false) override {
+        return impl_propogate(unobserved, position, print_process);
+    };
+
     void validateNeighbor() override;
 
     Grid getGrid() override{
@@ -75,15 +105,21 @@ private:
     /* data */
 public:
     profiling_WFC(shared_ptr<WFC> component): component(component){
-
+        H = component->getH();
+        W = component->getW();
     };
     ~profiling_WFC(){
 
     };
     myTimer timer;
     Position selectOneCell(set<Position>& unobserved, RandomGen& random) override ;
+    Position selectOneCell(unordered_set<Position, pair_hash>& unobserved, RandomGen& random) override ;
+
     RETURN_STATE collapse(Position& position, RandomGen& random, bool print_step = false) override ;
+
     void propogate(set<Position>& unobserved, Position& position, bool print_process = false) override;
+    void propogate(unordered_set<Position, pair_hash>& unobserved, Position& position, bool print_process = false) override;
+
     void validateNeighbor() override {
         component->validateNeighbor();
     };
@@ -106,9 +142,14 @@ private:
     Superposition bits_to_sp(ull value);
     void bits_to_sp(ull state, Superposition& out_sp);
 
-    /* data */
+    template <typename Set>
+    Position impl_selectOneCell(Set& unobserved, RandomGen& random);
+
+    template <typename Set>
+    void impl_propogate(Set& unobserved, Position& position, bool print_process = false);
+
 public:
-    bit_WFC(int H, int W, shared_ptr<Rule> rules): WFC(H,W,rules){
+    bit_WFC(int H, int W, shared_ptr<Rule> rules, int selection): WFC(H,W,rules, selection){
         assert(rules->M <= 64);
 
         auto init = rules->initValue();
@@ -131,9 +172,22 @@ public:
     ~bit_WFC(){
 
     };
-    Position selectOneCell(set<Position>& unobserved, RandomGen& random) override ;
+    Position selectOneCell(set<Position>& unobserved, RandomGen& random) override {
+        return impl_selectOneCell(unobserved,random);
+    };
+    Position selectOneCell(unordered_set<Position, pair_hash>& unobserved, RandomGen& random) override {
+        return impl_selectOneCell(unobserved,random);
+    };
+
     RETURN_STATE collapse(Position& position, RandomGen& random, bool print_step = false) override ;
-    void propogate(set<Position>& unobserved, Position& position, bool print_process = false) override;
+
+    void propogate(set<Position>& unobserved, Position& position, bool print_process = false) override {
+        return impl_propogate(unobserved, position, print_process);
+    };
+    void propogate(unordered_set<Position, pair_hash>& unobserved, Position& position, bool print_process = false) override {
+        return impl_propogate(unobserved, position, print_process);
+    };
+
     void validateNeighbor() override;
 
     Grid getGrid() override{
