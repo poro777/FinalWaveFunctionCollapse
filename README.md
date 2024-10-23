@@ -28,10 +28,15 @@ default:
 - `-b`, `--bitOp` : `-b 0` disable bit operator (enable by default that is faster than original one). 
 - `-c`, `--selection` : `-c 1`. selection mode
     - `0` : order selection (top -> bottom, left -> right)
+
     ![](./data/c0.png)
+    ![](./data/r1c0.png)
     - `1` : unorder selection (first element in hash table)
+
     ![](./data/c1.png)
+    ![](./data/r1c1.png)
     - `2` : random selection
+
     ![](./data/c2.png)
 
 ### No argument
