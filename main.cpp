@@ -16,7 +16,9 @@
 #include "rules.h"
 
 template <typename Set>
-bool run(shared_ptr<WFC> wfc_solver, long long seed, bool print_step, bool print_process){
+bool run(shared_ptr<WFC> wfc_solver, long long seed, shared_ptr<myTimer> timer, bool print_step, bool print_process){
+    SCOPE_PROFILING(timer, "Run()")
+
     RandomGen random(seed);
 
     int H = wfc_solver->getH();
@@ -34,6 +36,7 @@ bool run(shared_ptr<WFC> wfc_solver, long long seed, bool print_step, bool print
     int i = -1;
     while (unobserved.size() > 0)
     {
+        // SCOPE_PROFILING(timer, "Iterator")
         i++;
         if(print_process){
             std::cout << "Iter: " << i << "\n";
@@ -155,6 +158,8 @@ int main(int argc, char *argv[]){
     std::cout << "Running\n" << "H="<<H << ", W="<<W  << ", Rule: " << rule->name() << "\n";
 
     shared_ptr<WFC> wfc_solver = nullptr;
+    shared_ptr<myTimer> timer = std::make_shared<myTimer>();
+
     if(bitOp){
         wfc_solver= std::make_shared<bit_WFC>(H, W, rule, selection);
     } 
@@ -163,7 +168,7 @@ int main(int argc, char *argv[]){
     }
 
     if(print_time){
-        wfc_solver = std::make_shared<profiling_WFC>(wfc_solver);
+        wfc_solver = std::make_shared<profiling_WFC>(wfc_solver, timer);
     }
 
     if(print_rules){
@@ -175,12 +180,12 @@ int main(int argc, char *argv[]){
     
     if(selection == 1){
         // random selection by call set.begin()
-        finish = run<unordered_set<Position, pair_hash>>(wfc_solver, seed, print_step, print_process);
+        finish = run<unordered_set<Position, pair_hash>>(wfc_solver, seed, timer, print_step, print_process);
     }
     else{
         // order selection by call set.begin()
         // or use other implement
-        finish = run<set<Position>>(wfc_solver, seed, print_step, print_process);
+        finish = run<set<Position>>(wfc_solver, seed, timer, print_step, print_process);
     }
 
 
@@ -198,8 +203,7 @@ int main(int argc, char *argv[]){
     }
 
     if(print_time){
-        profiling_WFC* profilier = dynamic_cast<profiling_WFC*>(wfc_solver.get());
-        profilier->timer.print();
+        timer->print();
     }
     return 0;
 }

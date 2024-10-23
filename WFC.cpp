@@ -175,51 +175,32 @@ void naive_WFC::validateNeighbor()
 
 Position profiling_WFC::selectOneCell(set<Position> &unobserved, RandomGen &random)
 {
-    const char* name = "SelectOneCell()";  
-
-    timer.start(name);
-    auto returnValue = component->selectOneCell(unobserved, random);
-    timer.end(name);
-
-    return returnValue;
+    SCOPE_PROFILING(timer, "SelectOneCell()")
+    return component->selectOneCell(unobserved, random);
 }
 
 Position profiling_WFC::selectOneCell(unordered_set<Position, pair_hash> &unobserved, RandomGen &random)
 {
-    const char* name = "SelectOneCell()";  
-
-    timer.start(name);
-    auto returnValue = component->selectOneCell(unobserved, random);
-    timer.end(name);
-
-    return returnValue;
+    SCOPE_PROFILING(timer, "SelectOneCell()")
+    return component->selectOneCell(unobserved, random);
 }
 
 RETURN_STATE profiling_WFC::collapse(Position &position, RandomGen &random, bool print_step)
 {
-    const char* name = "Collapse()";
-
-    timer.start(name);
-    auto returnValue = component->collapse(position, random, print_step);
-    timer.end(name);
-
-    return returnValue;
+    SCOPE_PROFILING(timer, "Collapse()")
+    return component->collapse(position, random, print_step);
 }
 
 void profiling_WFC::propogate(set<Position> &unobserved, Position &position, bool print_process)
 {
-    const char* name = "Propogate()";
-    timer.start(name);
+    SCOPE_PROFILING(timer, "Propogate()")
     component->propogate(unobserved, position, print_process);
-    timer.end(name);
 }
 
 void profiling_WFC::propogate(unordered_set<Position, pair_hash> &unobserved, Position &position, bool print_process)
 {
-    const char* name = "Propogate()";
-    timer.start(name);
+    SCOPE_PROFILING(timer, "Propogate()")
     component->propogate(unobserved, position, print_process);
-    timer.end(name);
 }
 
 ull bit_WFC::sp_to_bits(const Superposition &sp)

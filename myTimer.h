@@ -5,6 +5,8 @@
 #include <iostream>
 #include <limits>
 
+#define SCOPE_PROFILING(timer, name) volatile scopeTimer _scopeTimer = scopeTimer((timer), (name));
+
 struct Time
 {
     std::chrono::_V2::system_clock::time_point start;
@@ -27,7 +29,7 @@ public:
 
     ~myTimer(){};
     template <typename T>
-    void start(const T && name){
+    void start(T&& name){
         auto start = std::chrono::high_resolution_clock::now();
         auto it = data.find(name);
         if(it == data.end()){
@@ -44,7 +46,7 @@ public:
     }
 
     template <typename T>
-    void end(const T&& name){
+    void end(T&& name){
         auto end = std::chrono::high_resolution_clock::now();
         auto it = data.find(name);
         if(it != data.end() && it->second.during == true){
@@ -85,4 +87,18 @@ public:
                 << "\tMin: " << time.min << "\tMax: " << time.max << "\n";
         }
     }
+};
+
+class scopeTimer
+{
+private:
+    shared_ptr<myTimer> timer;
+    std::string name;
+public:
+    scopeTimer(shared_ptr<myTimer> timer, const char* name):timer(timer), name(name){
+        timer->start(this->name);
+    };
+    ~scopeTimer(){
+        timer->end(this->name);
+    };
 };

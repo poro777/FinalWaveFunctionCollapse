@@ -104,14 +104,14 @@ private:
     shared_ptr<WFC> component;
     /* data */
 public:
-    profiling_WFC(shared_ptr<WFC> component): component(component){
+    profiling_WFC(shared_ptr<WFC> component, shared_ptr<myTimer> timer): component(component), timer(timer){
         H = component->getH();
         W = component->getW();
     };
     ~profiling_WFC(){
 
     };
-    myTimer timer;
+    shared_ptr<myTimer> timer;
     Position selectOneCell(set<Position>& unobserved, RandomGen& random) override ;
     Position selectOneCell(unordered_set<Position, pair_hash>& unobserved, RandomGen& random) override ;
 
