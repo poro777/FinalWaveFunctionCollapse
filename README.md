@@ -25,7 +25,7 @@ default:
 } 
 ```
 - `-s`, `--seed` : `-s 999` set seed to 999
-- `-b`, `--bitOp` : `-b 0` disable bit operator (enable by default that is faster than original one). 
+- `-b`, `--bitOp` : `-b 0` disable bit operator (enable by default that is faster than original one).  `-b 2` use entropy version bit_WFC.
 - `-c`, `--selection` : `-c 1`. selection mode
     - `0` : order selection (top -> bottom, left -> right)
 
@@ -38,6 +38,7 @@ default:
     - `2` : random selection
 
     ![](./data/c2.png)
+   - `3` : enable entropy (now only work in `-b 2`)
 
 ### No argument
 - `--print-time` : print profiling time.
