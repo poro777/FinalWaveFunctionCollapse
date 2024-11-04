@@ -54,6 +54,7 @@ class RandomGen
 private:
     std::mt19937 gen; // Seed the generator
     std::uniform_int_distribution<> random;
+    std::uniform_real_distribution<double> random_double;
 
 public:
     RandomGen(long long seed = -1){
@@ -69,11 +70,15 @@ public:
         }
 
         random = std::uniform_int_distribution<>(0, 100000);
+        random_double = std::uniform_real_distribution<double>(0.0, 1.0);
     };
     ~RandomGen(){};
 
     int randomInt(){
         return random(gen);
+    }
+    double randomDouble(){
+        return random_double(gen);
     }
 };
 

@@ -36,6 +36,7 @@ bool run(shared_ptr<WFC> wfc_solver, long long seed, shared_ptr<myTimer> timer, 
     int i = -1;
     while (unobserved.size() > 0)
     {
+        //wfc_solver->validateNeighbor();
         // SCOPE_PROFILING(timer, "Iterator")
         i++;
         if(print_process){
@@ -160,9 +161,12 @@ int main(int argc, char *argv[]){
     shared_ptr<WFC> wfc_solver = nullptr;
     shared_ptr<myTimer> timer = std::make_shared<myTimer>();
 
-    if(bitOp){
+    if(bitOp == 1){
         wfc_solver= std::make_shared<bit_WFC>(H, W, rule, selection);
-    } 
+    }
+    else if(bitOp == 2){
+        wfc_solver= std::make_shared<min_entropy_WFC>(H, W, rule, selection);
+    }
     else{
         wfc_solver= std::make_shared<naive_WFC>(H, W, rule, selection);
     }
