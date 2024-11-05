@@ -13,6 +13,25 @@ Position naive_WFC::impl_selectOneCell(Set &unobserved, RandomGen &random)
         std::advance(position_it, random.randomInt() % unobserved.size());
         return *position_it;
     }
+    else if (selection == 3){
+        double min_ = 1e+4;
+        Position argmin;
+        for (const Position& pos: unobserved)
+        {
+            double entropy = entropies[pos.first][pos.second];
+            // if(unobserved.size() <= 9){
+            //     std::cout<<entropy<<" "<<min_<<std::endl;
+            // }
+            if (entropy <= min_){
+                double noise = 1e-6 * random.randomDouble();
+                if (entropy + noise < min_){
+                    min_ = entropy + noise;
+                    argmin = pos;
+                }
+            }
+        }
+        return argmin;
+    }
     else{
         // implement other methods e.g. min entropy selection
         throw std::logic_error("Method not yet implemented");
@@ -27,12 +46,29 @@ RETURN_STATE naive_WFC::collapse(Position &position, RandomGen &random, bool pri
     if(state.size() == 0){ // There is no pattern available for a cell
         return FAILED;
     }
-
-    auto it_pattern = state.begin();
-    std::advance(it_pattern, random.randomInt() % state.size());
-
-    // collapse to one pattern
-    state = {*it_pattern};
+    if(selection <= 2){
+        auto it_pattern = state.begin();
+        std::advance(it_pattern, random.randomInt() % state.size());
+        // collapse to one pattern
+        state = {*it_pattern};
+    }
+    else if(selection == 3){
+        double sum = 0;
+        for (auto iter = state.begin(); iter != state.end(); iter++){    
+            sum += weights[(*iter)];   
+        }
+        double threshold = random.randomDouble() * sum;
+        double partialSum = 0;
+        
+        for (auto iter = state.begin(); iter != state.end(); iter++){
+            partialSum += weights[*(iter)];
+            if(partialSum >= threshold){
+                state = {*iter};
+                break;
+            }
+        }
+        entropies[position.first][position.second] = -1;
+    }
 
     if(print_step){
         std::cout << position.first << " " << position.second;
@@ -97,9 +133,20 @@ void naive_WFC::impl_propogate(Set &unobserved, Position &position, bool print_p
             assert(neighbor_sp.size() >= result.size());
 
             // remove at least one element, add to queue propogate later.
-            if(result.size() < neighbor_sp.size()){
+            if(result.size() < neighbor_sp.size() && selection <= 2){
                 q.push(neighbor_pos);
                 neighbor_sp = result;
+            }
+            else if(result.size() < neighbor_sp.size() && selection == 3){
+                q.push(neighbor_pos);
+                neighbor_sp = result;
+                double sumOfweights = 0;
+                double sumOfweightLogweights = 0;
+                for (auto iter = result.begin(); iter != result.end(); iter++){
+                        sumOfweights += weights[*(iter)];
+                        sumOfweightLogweights += weightLogweights[*(iter)];
+                }
+                entropies[neighbor_h][neighbor_w] = log(sumOfweights) - sumOfweightLogweights / sumOfweights;
             }
             
             if(neighbor_sp.size() == 1){
@@ -107,6 +154,9 @@ void naive_WFC::impl_propogate(Set &unobserved, Position &position, bool print_p
             }
             else if(neighbor_sp.size() == 0){
                 stop = true;
+            }
+            if(neighbor_sp.size() == 0 && selection == 3){
+                entropies[neighbor_h][neighbor_w] = -1;
             }
         };
 
@@ -243,6 +293,25 @@ Position bit_WFC::impl_selectOneCell(Set &unobserved, RandomGen &random)
         std::advance(position_it, random.randomInt() % unobserved.size());
         return *position_it;
     }
+    else if( selection == 3){
+        double min_ = 1e+4;
+        Position argmin;
+        for (const Position& pos: unobserved)
+        {
+            double entropy = entropies[pos.first][pos.second];
+            // if(unobserved.size() <= 9){
+            //     std::cout<<entropy<<" "<<min_<<std::endl;
+            // }
+            if (entropy <= min_){
+                double noise = 1e-6 * random.randomDouble();
+                if (entropy + noise < min_){
+                    min_ = entropy + noise;
+                    argmin = pos;
+                }
+            }
+        }
+        return argmin;
+    }
     else{
         // implement other methods e.g. min entropy selection
         throw std::logic_error("Method not yet implemented");
@@ -258,16 +327,42 @@ RETURN_STATE bit_WFC::collapse(Position &position, RandomGen &random, bool print
         return FAILED;
     }
 
-
+    int collapsed_state = -1;
     auto size = std::popcount(state); // count how many 1 in binary representation
-    // keep n-th 1, the other 1 to 0 
-    auto n = findNthSetBit(state, 1 + (random.randomInt() % size));
-    // collapse to one pattern
-    state = 1ull << n;
+    if(selection <= 2){
+        // keep n-th 1, the other 1 to 0 
+        auto n = findNthSetBit(state, 1 + (random.randomInt() % size));
+        // collapse to one pattern
+        state = 1ull << n;
+        collapsed_state = n;
+    }
+    else if(selection == 3){
+        double sum = 0;
+        auto bwidth = std::bit_width(state);
+        for (ull i = 0; i < bwidth; i++){
+            if((state >> i) & 1ull){
+                sum += weights[i];
+            }
+        }
+        double threshold = random.randomDouble() * sum;
+        double partialSum = 0;
+        
+        for (ull i = 0; i < bwidth; i++){
+            if((state >> i) & 1ull){
+                partialSum += weights[i];
+                if(partialSum >= threshold){
+                    collapsed_state = i;
+                    state = 1ull << i;
+                    break;
+                }
+            }
+        }
+        entropies[position.first][position.second] = -1;
+    }
 
     if(print_step){
         std::cout << position.first << " " << position.second;
-        std::cout << " collapse to " << n << "\n";
+        std::cout << " collapse to " << collapsed_state << "\n";
         printGrid();
         std::cout << "\n";
     }
@@ -329,9 +424,24 @@ void bit_WFC::impl_propogate(Set &unobserved, Position &position, bool print_pro
             assert(neighbor_sp >= result);
 
             // remove at least one element, add to queue propogate later.
-            if(result < neighbor_sp){
+            if(result < neighbor_sp && selection <= 2){
                 q.push(neighbor_pos);
                 neighbor_sp = result;
+            }
+            else if(result < neighbor_sp && selection == 3)
+            {
+                q.push(neighbor_pos);
+                neighbor_sp = result;
+                auto bwidth = std::bit_width(result);
+                double sumOfweights = 0;
+                double sumOfweightLogweights = 0;
+                for (ull i = 0; i < bwidth; i++){
+                    if((result >> i) & 1ull){
+                        sumOfweights += weights[i];
+                        sumOfweightLogweights += weightLogweights[i];
+                    }
+                }
+                entropies[neighbor_h][neighbor_w] = log(sumOfweights) - sumOfweightLogweights / sumOfweights;
             }
             
             auto size = std::popcount(neighbor_sp);
@@ -340,6 +450,9 @@ void bit_WFC::impl_propogate(Set &unobserved, Position &position, bool print_pro
             }
             else if(size == 0){
                 stop = true;
+            }
+            if(size == 0 && selection == 3){
+                entropies[neighbor_h][neighbor_w] = -1;
             }
         };
 

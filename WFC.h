@@ -68,10 +68,25 @@ private:
     template <typename Set>
     void impl_propogate(Set& unobserved, Position& position, bool print_process = false);
 
+    vector<vector<double>> entropies;
+    vector<double> weights;
+    vector<double> weightLogweights;
+
+
 public:
     naive_WFC(int H, int W, shared_ptr<Rule> rules, int selection): WFC(H,W,rules, selection){
         grid = Grid(H, std::vector<Cell>(W, rules->initValue()));
 
+        weights = vector<double>(rules->M, 1e1);
+        weightLogweights = vector<double>(rules->M, 0);
+        double sumOfweights = std::accumulate(weights.begin(), weights.end(), 0);
+        double sumOfweightLogweights = 0;
+        for(int i = 0; i < rules->M; i++){
+            weightLogweights[i] = weights[i] * log(weights[i]);
+            sumOfweightLogweights += weights[i] * log(weights[i]);
+        }        
+        double starting_entropy = log(sumOfweights) - sumOfweightLogweights / sumOfweights;
+        entropies = vector<vector<double>>(H, vector<double>(W, starting_entropy));
     };
     ~naive_WFC(){
 
@@ -150,6 +165,10 @@ private:
     template <typename Set>
     void impl_propogate(Set& unobserved, Position& position, bool print_process = false);
 
+    vector<vector<double>> entropies;
+    vector<double> weights;
+    vector<double> weightLogweights;
+
 public:
     bit_WFC(int H, int W, shared_ptr<Rule> rules, int selection): WFC(H,W,rules, selection){
         assert(rules->M <= 64);
@@ -170,6 +189,16 @@ public:
             right_left_rules[i] = sp_to_bits(rules->right_left_rules[i]);
         }
         
+        weights = vector<double>(rules->M, 1e1);
+        weightLogweights = vector<double>(rules->M, 0);
+        double sumOfweights = std::accumulate(weights.begin(), weights.end(), 0);
+        double sumOfweightLogweights = 0;
+        for(int i = 0; i < rules->M; i++){
+            weightLogweights[i] = weights[i] * log(weights[i]);
+            sumOfweightLogweights += weights[i] * log(weights[i]);
+        }        
+        double starting_entropy = log(sumOfweights) - sumOfweightLogweights / sumOfweights;
+        entropies = vector<vector<double>>(H, vector<double>(W, starting_entropy));
     };
     ~bit_WFC(){
 
