@@ -451,25 +451,22 @@ Position min_entropy_WFC::impl_selectOneCell(Set &unobserved, RandomGen &random)
     }
     else{
         double min_ = 1e+4;
-        int argmin_x = -1;
-        int argmin_y = -1;
-        for (size_t h = 0; h < H; h++){
-            for (size_t w = 0; w < W; w++){
-                double entropy = entropies[h][w];
-                // if(unobserved.size() <= 9){
-                //     std::cout<<entropy<<" "<<min_<<std::endl;
-                // }
-                if (unobserved.find({h, w}) != unobserved.end() && entropy <= min_){
-                    double noise = 1e-6 * random.randomDouble();
-                    if (entropy + noise < min_){
-                        min_ = entropy + noise;
-                        argmin_x = h;
-                        argmin_y = w;
-                    }
+        Position argmin;
+        for (const Position& pos: unobserved)
+        {
+            double entropy = entropies[pos.first][pos.second];
+            // if(unobserved.size() <= 9){
+            //     std::cout<<entropy<<" "<<min_<<std::endl;
+            // }
+            if (entropy <= min_){
+                double noise = 1e-6 * random.randomDouble();
+                if (entropy + noise < min_){
+                    min_ = entropy + noise;
+                    argmin = pos;
                 }
             }
         }
-        return {argmin_x, argmin_y};
+        return argmin;
     }
 }
 
@@ -500,7 +497,7 @@ RETURN_STATE min_entropy_WFC::collapse(Position &position, RandomGen &random, bo
         }
     }
 
-    entropies[position.first][position.second] = log(weights[collapsed_state]) - weightLogweights[collapsed_state] / weights[collapsed_state];
+    entropies[position.first][position.second] = -1;
     
     if(print_step){
         std::cout << position.first << " " << position.second;
