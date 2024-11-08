@@ -39,7 +39,7 @@ void print_grid(Grid& grid){
 
             }
             else{
-                auto s = *state.begin();
+                //auto s = *state.begin();
                 
                 std::cout <<" "<< *state.begin() << " ";
             }

@@ -44,7 +44,7 @@ void Rules::Rule::writeImage(Grid &grid)
         }
     }
 
-    assert(patterns.size() == M);
+    assert(patterns.size() == (size_t)M);
 
     std::cout << "\nMaking image...\n";
     int H = grid.size();
@@ -75,9 +75,9 @@ void Rules::Rule::writeImage(Grid &grid)
     
 
     // Fill the array with some pattern
-    for (size_t h = 0; h < H; h++)
+    for (int h = 0; h < H; h++)
     {
-        for (size_t w = 0; w < W; w++)
+        for (int w = 0; w < W; w++)
         {
             // for each cell
             Superposition state = grid[h][w];
@@ -87,13 +87,13 @@ void Rules::Rule::writeImage(Grid &grid)
             if(state.size() != 1){
                 int value = state.size() == 0? 0 : 255; // draw white to uncollapse cells, black to invaild cells.
 
-                for (size_t i = 0; i < pH; i++)
+                for (int i = 0; i < pH; i++)
                 {
-                    for (size_t o = 0; o < pW; o++)
+                    for (int o = 0; o < pW; o++)
                     {
                         // copy pattern
                         auto output_index = (index_of_first_pixel + (i * width) + o) * channels;
-                        for (size_t c = 0; c < channels; c++)
+                        for (int c = 0; c < channels; c++)
                         {
                             image[output_index + c] = value;
                         }
@@ -105,14 +105,14 @@ void Rules::Rule::writeImage(Grid &grid)
             int patternId = *state.begin();
 
             auto pattern = patterns[patternId];
-            for (size_t i = 0; i < pH; i++)
+            for (int i = 0; i < pH; i++)
             {
-                for (size_t o = 0; o < pW; o++)
+                for (int o = 0; o < pW; o++)
                 {
                     // copy pattern
                     auto output_index = (index_of_first_pixel + (i * width) + o) * channels;
                     auto pattern_index = ((i * pW) + o) * channels;
-                    for (size_t c = 0; c < channels; c++)
+                    for (int c = 0; c < channels; c++)
                     {
                         image[output_index + c] = pattern[pattern_index + c];  // Red
                     }

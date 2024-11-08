@@ -16,7 +16,7 @@ all: $(TARGET)
 
 # Rule to compile the source files
 $(TARGET): $(SRCS) $(HDRS)
-	$(CXX) $(CXXFLAGS) -o $(TARGET) $(SRCS)
+	$(CXX) $(CXXFLAGS) -o $(TARGET) $(SRCS) -fopenmp -Wall
 
 # Clean up by removing the compiled executable
 clean:

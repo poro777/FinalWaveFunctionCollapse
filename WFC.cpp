@@ -1,5 +1,6 @@
 #include "WFC.h"
 #include "utils.h"
+#include <omp.h>
 
 template <typename Set>
 Position naive_WFC::impl_selectOneCell(Set &unobserved, RandomGen &random)
@@ -182,7 +183,6 @@ void naive_WFC::validateNeighbor()
         
         int neighbor_h = h + dir.first;
         int neighbor_w = w + dir.second;
-        auto neighbor_pos = std::make_pair(neighbor_h, neighbor_w);
 
         if(neighbor_h < 0 || neighbor_h >= H || neighbor_w < 0 || neighbor_w >= W){
             return true;
@@ -204,9 +204,9 @@ void naive_WFC::validateNeighbor()
     };
     
 
-    for (size_t h = 0; h < H; h++)
+    for (int h = 0; h < H; h++)
     {
-        for (size_t w = 0; w < W; w++)
+        for (int w = 0; w < W; w++)
         {
             auto pos = std::make_pair(h, w);
             bool vaild = validate(pos, std::make_pair(1, 0), rules->top_bottom_rules) &&
@@ -478,7 +478,6 @@ void bit_WFC::validateNeighbor()
         
         int neighbor_h = h + dir.first;
         int neighbor_w = w + dir.second;
-        auto neighbor_pos = std::make_pair(neighbor_h, neighbor_w);
 
         if(neighbor_h < 0 || neighbor_h >= H || neighbor_w < 0 || neighbor_w >= W){
             return true;
@@ -503,9 +502,9 @@ void bit_WFC::validateNeighbor()
     };
     
 
-    for (size_t h = 0; h < H; h++)
+    for (int h = 0; h < H; h++)
     {
-        for (size_t w = 0; w < W; w++)
+        for (int w = 0; w < W; w++)
         {
             auto pos = std::make_pair(h, w);
             bool vaild = validate(pos, std::make_pair(1, 0), top_bottom_rules) &&
@@ -518,6 +517,6 @@ void bit_WFC::validateNeighbor()
                      << h << ", " << w  << ")\n";
             }
         }
-        
-    }        
+
+    }
 }

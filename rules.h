@@ -73,7 +73,7 @@ public:
     
     Superposition initValue(){
         Superposition initial_state;
-        for (size_t i = 0; i < M; i++)
+        for (int i = 0; i < M; i++)
         {
             initial_state.insert(i);
         }
@@ -81,7 +81,7 @@ public:
     }
 
     void print(){
-        for (size_t i = 0; i < M; i++)
+        for (int i = 0; i < M; i++)
         {
             std::cout << "\n->" << i << "\n";
             std::cout << "top:\t";

@@ -149,6 +149,13 @@ public:
 class bit_WFC:public WFC
 {
 private:
+    template <typename Set>
+    Position impl_selectOneCell(Set& unobserved, RandomGen& random);
+
+    template <typename Set>
+    void impl_propogate(Set& unobserved, Position& position, bool print_process = false);
+
+protected:
     vector<vector<ull>> grid;
     vector<ull> top_bottom_rules; 
     vector<ull> bottom_top_rules;
@@ -159,11 +166,6 @@ private:
     Superposition bits_to_sp(ull value);
     void bits_to_sp(ull state, Superposition& out_sp);
 
-    template <typename Set>
-    Position impl_selectOneCell(Set& unobserved, RandomGen& random);
-
-    template <typename Set>
-    void impl_propogate(Set& unobserved, Position& position, bool print_process = false);
 
     vector<vector<double>> entropies;
     vector<double> weights;
@@ -223,9 +225,9 @@ public:
 
     Grid getGrid() override{
         Grid sp_grid = Grid(H, vector<Superposition>(W));
-        for (size_t h = 0; h < H; h++)
+        for (int h = 0; h < H; h++)
         {
-            for (size_t w = 0; w < W; w++)
+            for (int w = 0; w < W; w++)
             {
                 ull state = this->grid[h][w];
                 bits_to_sp(state, sp_grid[h][w]);

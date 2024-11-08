@@ -164,9 +164,6 @@ int main(int argc, char *argv[]){
     if(bitOp == 1){
         wfc_solver= std::make_shared<bit_WFC>(H, W, rule, selection);
     }
-    else if(bitOp == 2){
-        wfc_solver= std::make_shared<min_entropy_WFC>(H, W, rule, selection);
-    }
     else{
         wfc_solver= std::make_shared<naive_WFC>(H, W, rule, selection);
     }
