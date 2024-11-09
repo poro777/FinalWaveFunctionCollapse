@@ -1,6 +1,11 @@
 #include "WFC.h"
 #include "utils.h"
 #include <omp.h>
+#include <mutex>
+#include <shared_mutex>
+
+template Position naive_WFC::impl_selectOneCell<>(set<Position> &unobserved, RandomGen &random);
+template Position naive_WFC::impl_selectOneCell<>(unordered_set<Position, pair_hash> &unobserved, RandomGen &random);
 
 template <typename Set>
 Position naive_WFC::impl_selectOneCell(Set &unobserved, RandomGen &random)
@@ -521,135 +526,134 @@ void bit_WFC::validateNeighbor()
     }        
 }
 
+template void mp_WFC::impl_propogate<>(set<Position> &unobserved, Position &position, bool print_process);
+template void mp_WFC::impl_propogate<>(unordered_set<Position, pair_hash> &unobserved, Position &position, bool print_process);
+
 
 template <typename Set>
-Position mp_bit_WFC::impl_selectOneCell(Set &unobserved, RandomGen &random)
-{
-    if(selection <= 1){  // first element of order_set, unorderd_set
-        auto position_it = unobserved.begin();
-        return *position_it;
-    }
-    else if (selection == 2){ // full random
-        auto position_it = unobserved.begin();
-        std::advance(position_it, random.randomInt() % unobserved.size());
-        return *position_it;
-    }
-    else if( selection == 3){
-        double min_ = 1e+4;
-        Position argmin;
-        for (const Position& pos: unobserved)
-        {
-            double entropy = entropies[pos.first][pos.second];
-            // if(unobserved.size() <= 9){
-            //     std::cout<<entropy<<" "<<min_<<std::endl;
-            // }
-            if (entropy <= min_){
-                double noise = 1e-6 * random.randomDouble();
-                if (entropy + noise < min_){
-                    min_ = entropy + noise;
-                    argmin = pos;
-                }
-            }
-        }
-        return argmin;
-    }
-    else{
-        // implement other methods e.g. min entropy selection
-        throw std::logic_error("Method not yet implemented");
-    }
-}
-
-template <typename Set>
-void mp_bit_WFC::impl_propogate(Set &unobserved, Position &position, bool print_process)
+inline void mp_WFC::impl_propogate(Set &unobserved, Position &position, bool print_process)
 {
     // BFS
-    std::queue<Position> q;
+    shared_ptr<Position[]> q(new Position[H * W]());
+    int index_q = 0;
+
+    shared_ptr<Position[]> next_q(new Position[H * W]());
+    int index_next_q = 0;
+
+    std::shared_mutex rwMutex;
+
     set<Position> processed;
     int count = 0;
-    q.push(position);
+
+    q[index_q++] = position;
 
     int max_distance = 0;
     Position distance_record;
+
     bool stop = false;
-    while (!q.empty() && !stop) {
-        Position curr = q.front();
-        q.pop();
-        int h = curr.first;
-        int w = curr.second;
-        auto sp = grid[h][w];
-        processed.insert(curr);
-        count++;
 
-        auto distance = abs(h - position.first) + abs(w - position.second);
-        if(distance > max_distance){
-            max_distance = distance;
-            distance_record = std::make_pair(h - position.first, w - position.second);
-        }
+    while (index_q > 0 && !stop) {
+        for (int i = 0; i < index_q; i++)
+        {
+            Position curr = q[i];
+            int h = curr.first;
+            int w = curr.second;
+            auto& sp = grid[h][w];
 
-        auto propogate_dir = [&](Position dir, vector<ull>& rules){
-            int neighbor_h = h + dir.first;
-            int neighbor_w = w + dir.second;
-            auto neighbor_pos = std::make_pair(neighbor_h, neighbor_w);
+            /*
+            processed.insert(curr);
+            count++;
 
-            auto unobserved_it = unobserved.find(neighbor_pos);
-            if(neighbor_h < 0 || neighbor_h >= H || neighbor_w < 0 || neighbor_w >= W
-                || unobserved_it == unobserved.end()){
-                return;
-            }
-            auto& neighbor_sp = grid[neighbor_h][neighbor_w];
+            auto distance = abs(h - position.first) + abs(w - position.second);
+            if(distance > max_distance){
+                max_distance = distance;
+                distance_record = std::make_pair(h - position.first, w - position.second);
+            }*/
+            auto propogate_dir = [&](Position dir, vector<set<int>>& rules){
+                int neighbor_h = h + dir.first;
+                int neighbor_w = w + dir.second;
+                auto neighbor_pos = std::make_pair(neighbor_h, neighbor_w);
 
-            ull vaild_state = 0;
-            auto bwidth = std::bit_width(sp);
-            for (ull i = 0; i < bwidth; i++)
-            {
-                if((sp >> i) & 1ull){
-                    auto rule = rules[i];
-                    vaild_state |= rule;
+                std::unique_lock<std::shared_mutex> readLock(rwMutex);
+
+                auto unobserved_it = unobserved.find(neighbor_pos);
+                if(neighbor_h < 0 || neighbor_h >= H || neighbor_w < 0 || neighbor_w >= W
+                    || unobserved_it == unobserved.end()){
+                    
+
+                    return;
                 }
-            }
+                readLock.unlock();
 
-            // remove elemnet not in vaild_state
-            ull result = neighbor_sp & vaild_state;
-            assert(neighbor_sp >= result);
 
-            // remove at least one element, add to queue propogate later.
-            if(result < neighbor_sp && selection <= 2){
-                q.push(neighbor_pos);
-                neighbor_sp = result;
-            }
-            else if(result < neighbor_sp && selection == 3)
-            {
-                q.push(neighbor_pos);
-                neighbor_sp = result;
-                auto bwidth = std::bit_width(result);
-                double sumOfweights = 0;
-                double sumOfweightLogweights = 0;
-                for (ull i = 0; i < bwidth; i++){
-                    if((result >> i) & 1ull){
-                        sumOfweights += weights[i];
-                        sumOfweightLogweights += weightLogweights[i];
+                auto& neighbor_sp = grid[neighbor_h][neighbor_w];
+
+                Superposition vaild_state;
+                for (int state: sp)
+                {
+                    auto& rule = rules[state];
+                    vaild_state.insert(rule.begin(), rule.end());
+                }
+
+                // remove elemnet not in vaild_state
+                Superposition result = set_intersection(neighbor_sp, vaild_state);
+                assert(neighbor_sp.size() >= result.size());
+                                
+
+                // remove at least one element, add to queue propogate later.
+                if(result.size() < neighbor_sp.size()){
+                    int index = __sync_fetch_and_add(&index_next_q, 1);
+                    next_q[index] = neighbor_pos;
+                    neighbor_sp = result;
+
+                    if(selection == 3){
+                        double sumOfweights = 0;
+                        double sumOfweightLogweights = 0;
+                        for (auto iter = result.begin(); iter != result.end(); iter++){
+                                sumOfweights += weights[*(iter)];
+                                sumOfweightLogweights += weightLogweights[*(iter)];
+                        }
+                        entropies[neighbor_h][neighbor_w] = log(sumOfweights) - sumOfweightLogweights / sumOfweights;
                     }
                 }
-                entropies[neighbor_h][neighbor_w] = log(sumOfweights) - sumOfweightLogweights / sumOfweights;
-            }
+
+                if(neighbor_sp.size() == 1){
+                    std::unique_lock<std::shared_mutex> writeLock(rwMutex);
+                    unobserved.erase(neighbor_pos);
+
+                }
+                else if(neighbor_sp.size() == 0){
+                    stop = true;
+                }
+                if(neighbor_sp.size() == 0 && selection == 3){
+                    entropies[neighbor_h][neighbor_w] = -1;
+                }
+            };
+
+
+            #pragma omp parallel sections num_threads(4)
+            {
+                #pragma omp section
+            propogate_dir(std::make_pair(1, 0), rules->top_bottom_rules); // to bottom
+            #pragma omp section
+            propogate_dir(std::make_pair(-1, 0), rules->bottom_top_rules); // to top
+            #pragma omp section
+            propogate_dir(std::make_pair(0, 1), rules->left_right_rules); // to right
+            #pragma omp section
+            propogate_dir(std::make_pair(0, -1), rules->right_left_rules); // to left
             
-            auto size = std::popcount(neighbor_sp);
-            if(size == 1){  
-                unobserved.erase(unobserved_it);
             }
-            else if(size == 0){
-                stop = true;
-            }
-            if(size == 0 && selection == 3){
-                entropies[neighbor_h][neighbor_w] = -1;
-            }
-        };
 
-        propogate_dir(std::make_pair(1, 0),  top_bottom_rules); // to bottom
-        propogate_dir(std::make_pair(-1, 0), bottom_top_rules); // to top
-        propogate_dir(std::make_pair(0, 1),  left_right_rules); // to right
-        propogate_dir(std::make_pair(0, -1), right_left_rules); // to left
 
+
+        }
+    
+
+        next_q.swap(q);
+        index_q = index_next_q;
+        index_next_q = 0;
+
+    
     }
 
     if(print_process){

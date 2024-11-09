@@ -59,7 +59,7 @@ public:
 
 class naive_WFC:public WFC
 {
-private:
+protected:
     Grid grid;
 
     template <typename Set>
@@ -239,16 +239,20 @@ public:
 };
 
 
-class mp_bit_WFC:public bit_WFC
+class mp_WFC:public naive_WFC
 {
 private:
-    template <typename Set>
-    Position impl_selectOneCell(Set& unobserved, RandomGen& random);
 
     template <typename Set>
     void impl_propogate(Set& unobserved, Position& position, bool print_process = false);
 
 public:
+    mp_WFC(int H, int W, shared_ptr<Rule> rules, int selection): naive_WFC(H,W,rules, selection){
+
+    }
+    ~mp_WFC(){
+
+    };
     Position selectOneCell(set<Position>& unobserved, RandomGen& random) override {
         return impl_selectOneCell(unobserved,random);
     };
