@@ -237,3 +237,30 @@ public:
         return sp_grid;
     }
 };
+
+
+class mp_bit_WFC:public bit_WFC
+{
+private:
+    template <typename Set>
+    Position impl_selectOneCell(Set& unobserved, RandomGen& random);
+
+    template <typename Set>
+    void impl_propogate(Set& unobserved, Position& position, bool print_process = false);
+
+public:
+    Position selectOneCell(set<Position>& unobserved, RandomGen& random) override {
+        return impl_selectOneCell(unobserved,random);
+    };
+    Position selectOneCell(unordered_set<Position, pair_hash>& unobserved, RandomGen& random) override {
+        return impl_selectOneCell(unobserved,random);
+    };
+
+    void propogate(set<Position>& unobserved, Position& position, bool print_process = false) override {
+        return impl_propogate(unobserved, position, print_process);
+    };
+    void propogate(unordered_set<Position, pair_hash>& unobserved, Position& position, bool print_process = false) override {
+        return impl_propogate(unobserved, position, print_process);
+    };
+
+};

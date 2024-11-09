@@ -14,6 +14,7 @@
 #include "WFC.h"
 #include "setOperator.h"
 #include "rules.h"
+#include <omp.h>
 
 template <typename Set>
 bool run(shared_ptr<WFC> wfc_solver, long long seed, shared_ptr<myTimer> timer, bool print_step, bool print_process){
@@ -83,6 +84,7 @@ int main(int argc, char *argv[]){
     int save_result = false;
     int print_time = false;
 
+    omp_set_num_threads(8);
 
     // Define long options
     static struct option long_options[] = {
@@ -162,7 +164,7 @@ int main(int argc, char *argv[]){
     shared_ptr<myTimer> timer = std::make_shared<myTimer>();
 
     if(bitOp == 1){
-        wfc_solver= std::make_shared<bit_WFC>(H, W, rule, selection);
+        wfc_solver= std::make_shared<mp_bit_WFC>(H, W, rule, selection);
     }
     else{
         wfc_solver= std::make_shared<naive_WFC>(H, W, rule, selection);

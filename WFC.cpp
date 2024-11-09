@@ -517,6 +517,143 @@ void bit_WFC::validateNeighbor()
                      << h << ", " << w  << ")\n";
             }
         }
+        
+    }        
+}
 
+
+template <typename Set>
+Position mp_bit_WFC::impl_selectOneCell(Set &unobserved, RandomGen &random)
+{
+    if(selection <= 1){  // first element of order_set, unorderd_set
+        auto position_it = unobserved.begin();
+        return *position_it;
+    }
+    else if (selection == 2){ // full random
+        auto position_it = unobserved.begin();
+        std::advance(position_it, random.randomInt() % unobserved.size());
+        return *position_it;
+    }
+    else if( selection == 3){
+        double min_ = 1e+4;
+        Position argmin;
+        for (const Position& pos: unobserved)
+        {
+            double entropy = entropies[pos.first][pos.second];
+            // if(unobserved.size() <= 9){
+            //     std::cout<<entropy<<" "<<min_<<std::endl;
+            // }
+            if (entropy <= min_){
+                double noise = 1e-6 * random.randomDouble();
+                if (entropy + noise < min_){
+                    min_ = entropy + noise;
+                    argmin = pos;
+                }
+            }
+        }
+        return argmin;
+    }
+    else{
+        // implement other methods e.g. min entropy selection
+        throw std::logic_error("Method not yet implemented");
+    }
+}
+
+template <typename Set>
+void mp_bit_WFC::impl_propogate(Set &unobserved, Position &position, bool print_process)
+{
+    // BFS
+    std::queue<Position> q;
+    set<Position> processed;
+    int count = 0;
+    q.push(position);
+
+    int max_distance = 0;
+    Position distance_record;
+    bool stop = false;
+    while (!q.empty() && !stop) {
+        Position curr = q.front();
+        q.pop();
+        int h = curr.first;
+        int w = curr.second;
+        auto sp = grid[h][w];
+        processed.insert(curr);
+        count++;
+
+        auto distance = abs(h - position.first) + abs(w - position.second);
+        if(distance > max_distance){
+            max_distance = distance;
+            distance_record = std::make_pair(h - position.first, w - position.second);
+        }
+
+        auto propogate_dir = [&](Position dir, vector<ull>& rules){
+            int neighbor_h = h + dir.first;
+            int neighbor_w = w + dir.second;
+            auto neighbor_pos = std::make_pair(neighbor_h, neighbor_w);
+
+            auto unobserved_it = unobserved.find(neighbor_pos);
+            if(neighbor_h < 0 || neighbor_h >= H || neighbor_w < 0 || neighbor_w >= W
+                || unobserved_it == unobserved.end()){
+                return;
+            }
+            auto& neighbor_sp = grid[neighbor_h][neighbor_w];
+
+            ull vaild_state = 0;
+            auto bwidth = std::bit_width(sp);
+            for (ull i = 0; i < bwidth; i++)
+            {
+                if((sp >> i) & 1ull){
+                    auto rule = rules[i];
+                    vaild_state |= rule;
+                }
+            }
+
+            // remove elemnet not in vaild_state
+            ull result = neighbor_sp & vaild_state;
+            assert(neighbor_sp >= result);
+
+            // remove at least one element, add to queue propogate later.
+            if(result < neighbor_sp && selection <= 2){
+                q.push(neighbor_pos);
+                neighbor_sp = result;
+            }
+            else if(result < neighbor_sp && selection == 3)
+            {
+                q.push(neighbor_pos);
+                neighbor_sp = result;
+                auto bwidth = std::bit_width(result);
+                double sumOfweights = 0;
+                double sumOfweightLogweights = 0;
+                for (ull i = 0; i < bwidth; i++){
+                    if((result >> i) & 1ull){
+                        sumOfweights += weights[i];
+                        sumOfweightLogweights += weightLogweights[i];
+                    }
+                }
+                entropies[neighbor_h][neighbor_w] = log(sumOfweights) - sumOfweightLogweights / sumOfweights;
+            }
+            
+            auto size = std::popcount(neighbor_sp);
+            if(size == 1){  
+                unobserved.erase(unobserved_it);
+            }
+            else if(size == 0){
+                stop = true;
+            }
+            if(size == 0 && selection == 3){
+                entropies[neighbor_h][neighbor_w] = -1;
+            }
+        };
+
+        propogate_dir(std::make_pair(1, 0),  top_bottom_rules); // to bottom
+        propogate_dir(std::make_pair(-1, 0), bottom_top_rules); // to top
+        propogate_dir(std::make_pair(0, 1),  left_right_rules); // to right
+        propogate_dir(std::make_pair(0, -1), right_left_rules); // to left
+
+    }
+
+    if(print_process){
+        std::cout << "BF search: " << count << "\tCells: " << processed.size() << "\tDistance: " <<max_distance<< " (" << 
+            distance_record.first << "," << distance_record.second<<")\n\n";
     }
 }
