@@ -540,6 +540,8 @@ inline void mp_WFC::impl_propogate(Set &unobserved, Position &position, bool pri
     shared_ptr<Position[]> next_q(new Position[H * W]());
     int index_next_q = 0;
 
+    bool remove[4];
+
     std::shared_mutex rwMutex;
 
     set<Position> processed;
@@ -569,12 +571,12 @@ inline void mp_WFC::impl_propogate(Set &unobserved, Position &position, bool pri
                 max_distance = distance;
                 distance_record = std::make_pair(h - position.first, w - position.second);
             }*/
-            auto propogate_dir = [&](Position dir, vector<set<int>>& rules){
+            auto propogate_dir = [&](Position dir, vector<set<int>>& rules, int id){
+                remove[id] = false;
                 int neighbor_h = h + dir.first;
                 int neighbor_w = w + dir.second;
                 auto neighbor_pos = std::make_pair(neighbor_h, neighbor_w);
 
-                std::unique_lock<std::shared_mutex> readLock(rwMutex);
 
                 auto unobserved_it = unobserved.find(neighbor_pos);
                 if(neighbor_h < 0 || neighbor_h >= H || neighbor_w < 0 || neighbor_w >= W
@@ -583,7 +585,6 @@ inline void mp_WFC::impl_propogate(Set &unobserved, Position &position, bool pri
 
                     return;
                 }
-                readLock.unlock();
 
 
                 auto& neighbor_sp = grid[neighbor_h][neighbor_w];
@@ -618,8 +619,7 @@ inline void mp_WFC::impl_propogate(Set &unobserved, Position &position, bool pri
                 }
 
                 if(neighbor_sp.size() == 1){
-                    std::unique_lock<std::shared_mutex> writeLock(rwMutex);
-                    unobserved.erase(neighbor_pos);
+                    remove[id] = true;
 
                 }
                 else if(neighbor_sp.size() == 0){
@@ -634,16 +634,28 @@ inline void mp_WFC::impl_propogate(Set &unobserved, Position &position, bool pri
             #pragma omp parallel sections num_threads(4)
             {
                 #pragma omp section
-            propogate_dir(std::make_pair(1, 0), rules->top_bottom_rules); // to bottom
+            propogate_dir(std::make_pair(1, 0), rules->top_bottom_rules,0); // to bottom
             #pragma omp section
-            propogate_dir(std::make_pair(-1, 0), rules->bottom_top_rules); // to top
+            propogate_dir(std::make_pair(-1, 0), rules->bottom_top_rules,1); // to top
             #pragma omp section
-            propogate_dir(std::make_pair(0, 1), rules->left_right_rules); // to right
+            propogate_dir(std::make_pair(0, 1), rules->left_right_rules,2); // to right
             #pragma omp section
-            propogate_dir(std::make_pair(0, -1), rules->right_left_rules); // to left
+            propogate_dir(std::make_pair(0, -1), rules->right_left_rules,3); // to left
             
             }
 
+            if(remove[0]){
+                unobserved.erase(std::make_pair(h+1, w+0));     
+            }
+            if(remove[1]){
+                unobserved.erase(std::make_pair(h-1, w+0));     
+            }
+            if(remove[2]){
+                unobserved.erase(std::make_pair(h, w+1));     
+            }
+            if(remove[3]){
+                unobserved.erase(std::make_pair(h, w-1));     
+            }
 
 
         }
