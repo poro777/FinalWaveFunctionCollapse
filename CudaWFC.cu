@@ -82,7 +82,7 @@ __host__ bool CudaWFC::collapse(int position, bool print, RandomGen& random)
     return OK;
 }
 
-__global__ void propogateCuda(int * check, CudaWFC* wfc_solver, int *notok)
+__global__ void propogateCuda(int * check, CudaWFC* wfc_solver, int *notok, int *count)
 {
     int M = wfc_solver->M;
     int col = threadIdx.x;
@@ -161,6 +161,7 @@ __global__ void propogateCuda(int * check, CudaWFC* wfc_solver, int *notok)
             if(index == 1)
                 wfc_solver->collapseOk[row * blockDim.x + col] = true;
             wfc_solver->entropies[row * blockDim.x + col] = logf(sumOfweights) - sumOfweightLogweights / sumOfweights;
+            *(count) = 1;
         }
         if(my == 0){
             wfc_solver->entropies[row * blockDim.x + col] = -1;
@@ -207,6 +208,7 @@ __global__ void propogateCuda(int * check, CudaWFC* wfc_solver, int *notok)
             if(index == 1)
                 wfc_solver->collapseOk[row * blockDim.x + col] = true;
             wfc_solver->entropies[row * blockDim.x + col] = logf(sumOfweights) - sumOfweightLogweights / sumOfweights;
+            *(count) = 1;
         }
         if(my == 0){
             wfc_solver->collapseOk[row * blockDim.x + col] = false;
@@ -251,6 +253,7 @@ __global__ void propogateCuda(int * check, CudaWFC* wfc_solver, int *notok)
             if(index == 1)
                 wfc_solver->collapseOk[row * blockDim.x + col] = true;
             wfc_solver->entropies[row * blockDim.x + col] = logf(sumOfweights) - sumOfweightLogweights / sumOfweights;
+            *(count) = 1;
         }
         if(my == 0){
             wfc_solver->collapseOk[row * blockDim.x + col] = false;
@@ -296,6 +299,7 @@ __global__ void propogateCuda(int * check, CudaWFC* wfc_solver, int *notok)
             if(index == 1)
                 wfc_solver->collapseOk[row * blockDim.x + col] = true;
             wfc_solver->entropies[row * blockDim.x + col] = logf(sumOfweights) - sumOfweightLogweights / sumOfweights;
+            *(count) = 1;
         }
         if(my == 0){
             wfc_solver->collapseOk[row * blockDim.x + col] = false;
@@ -319,30 +323,37 @@ __host__ void CudaWFC::propogate(int position)
     propogateOk[position] = true;
     int *check;
     int *notok;
+    int *count;
     cudaMalloc(&check, sizeof(int));
     cudaMalloc(&notok, sizeof(int));
+    cudaMalloc(&count, sizeof(int));
     int one= 1;
     int zero= 0;
     cudaMemcpy(check, &zero, sizeof(int), cudaMemcpyHostToDevice);
     cudaMemcpy(notok, &zero, sizeof(int), cudaMemcpyHostToDevice);
+    cudaMemcpy(count, &zero, sizeof(int), cudaMemcpyHostToDevice);
     
 
     while(true)
     {
         cudaMemcpy(check, &zero, sizeof(int), cudaMemcpyHostToDevice);
         cudaMemcpy(notok, &zero, sizeof(int), cudaMemcpyHostToDevice);
+        cudaMemcpy(count, &zero, sizeof(int), cudaMemcpyHostToDevice);
         //tmp<<<H,W>>>(&check);
         
-        propogateCuda<<<H, W>>>(check, this, notok);
+        propogateCuda<<<H, W>>>(check, this, notok, count);
         //    weights, weightLogweights, entropies, H, W);
         checkCudaErrors(cudaDeviceSynchronize());
         int host_check;
         int host_ontok;
+        int host_count;
         cudaMemcpy(&host_check, check, sizeof(int), cudaMemcpyDeviceToHost);
         cudaMemcpy(&host_ontok, notok, sizeof(int), cudaMemcpyDeviceToHost);
+        cudaMemcpy(&host_count, count, sizeof(int), cudaMemcpyDeviceToHost);
 
         if(host_ontok == 1)break;
         if(host_check == 0)break;
+        if(host_count == 0)break;
     
         /*for(int i=0;i<H;i++)
         {
