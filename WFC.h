@@ -10,7 +10,7 @@
 #include <cmath>
 #include <numeric>
 #include <queue>
-
+#include <cuda_runtime.h>
 enum RETURN_STATE {
     OK,
     FAILED
