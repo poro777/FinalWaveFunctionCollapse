@@ -14,6 +14,7 @@
 #include "WFC.h"
 #include "setOperator.h"
 #include "rules.h"
+#include "myKernel.cuh"
 
 template <typename Set>
 bool run(shared_ptr<WFC> wfc_solver, long long seed, shared_ptr<myTimer> timer, bool print_step, bool print_process){
@@ -156,7 +157,7 @@ int main(int argc, char *argv[]){
         break;
     } 
     
-    std::cout << "Running\n" << "H="<<H << ", W="<<W  << ", Rule: " << rule->name() << "\n";
+    std::cout << "Running\n" << "H="<<H << ", W="<<W  << ", Rule: " << rule->name() << ", B=" << bitOp << "\n";
 
     shared_ptr<WFC> wfc_solver = nullptr;
     shared_ptr<myTimer> timer = std::make_shared<myTimer>();
@@ -165,7 +166,7 @@ int main(int argc, char *argv[]){
         wfc_solver= std::make_shared<bit_WFC>(H, W, rule, selection);
     }
     else{
-        wfc_solver= std::make_shared<naive_WFC>(H, W, rule, selection);
+        wfc_solver= std::make_shared<CudaWFC>(H, W, rule, selection);
     }
 
     if(print_time){

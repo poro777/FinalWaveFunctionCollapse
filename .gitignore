@@ -6,7 +6,7 @@
 
 # Built Visual Studio Code Extensions
 *.vsix
-
+*.o
 *.out
 log.txt
 
