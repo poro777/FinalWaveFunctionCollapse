@@ -73,7 +73,7 @@ int main(int argc, char *argv[]){
     int W = 8, H = 8;
     int ruleType = 0;
     long long seed = -1;
-    int bitOp = 1;
+    int solverType = 1;
     int selection = 0;
 
     // flags
@@ -91,7 +91,7 @@ int main(int argc, char *argv[]){
         {"width", required_argument, 0, 'w'},
         {"rule", required_argument, 0, 'r'},
         {"seed", required_argument, 0, 's'},
-        {"bitOp", required_argument, 0, 'b'},
+        {"solverType", required_argument, 0, 'b'},
         {"selection", required_argument, 0, 'c'},
 
         {"print-time", no_argument, &print_time, 1},
@@ -123,7 +123,7 @@ int main(int argc, char *argv[]){
                 seed = std::stoll(optarg); // seed
                 break;    
             case 'b':
-                bitOp = std::stoi(optarg);
+                solverType = std::stoi(optarg);
                 break;
             case 'c':
                 selection = std::stoi(optarg);
@@ -157,16 +157,20 @@ int main(int argc, char *argv[]){
         break;
     } 
     
-    std::cout << "Running\n" << "H="<<H << ", W="<<W  << ", Rule: " << rule->name() << ", B=" << bitOp << "\n";
+    std::cout << "Running\n" << "H="<<H << ", W="<<W  << ", Rule: " << rule->name() << ", B=" << solverType << "\n";
 
     shared_ptr<WFC> wfc_solver = nullptr;
     shared_ptr<myTimer> timer = std::make_shared<myTimer>();
 
-    if(bitOp == 1){
+    if(solverType == 1){
         wfc_solver= std::make_shared<bit_WFC>(H, W, rule, selection);
     }
-    else{
+    else if(solverType == 1){
         wfc_solver= std::make_shared<CudaWFC>(H, W, rule, selection);
+    }
+    else{
+        // 0
+        wfc_solver= std::make_shared<naive_WFC>(H, W, rule, selection);
     }
 
     if(print_time){
