@@ -162,11 +162,6 @@ protected:
     vector<ull> left_right_rules; 
     vector<ull> right_left_rules;
 
-    ull sp_to_bits(const Superposition& sp);
-    Superposition bits_to_sp(ull value);
-    void bits_to_sp(ull state, Superposition& out_sp);
-
-
     vector<vector<double>> entropies;
     vector<double> weights;
     vector<double> weightLogweights;

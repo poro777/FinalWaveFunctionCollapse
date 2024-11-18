@@ -253,33 +253,6 @@ void profiling_WFC::propogate(unordered_set<Position, pair_hash> &unobserved, Po
     component->propogate(unobserved, position, print_process);
 }
 
-ull bit_WFC::sp_to_bits(const Superposition &sp)
-{
-    ull n = 0;
-    for(ull pattern: sp){
-        n += (1ull << pattern);
-    }
-    return n;
-}
-
-Superposition bit_WFC::bits_to_sp(ull state)
-{
-    Superposition sp = {};
-    bits_to_sp(state, sp);
-    return sp;
-}
-
-void bit_WFC::bits_to_sp(ull state, Superposition &out_sp)
-{
-    int bwidth = std::bit_width(state);
-    for (int i = 0; i < bwidth; i++)
-    {
-        if(state & 1ull){
-            out_sp.insert(i);
-        }
-        state >>= 1ull;
-    }
-}
 
 template <typename Set>
 Position bit_WFC::impl_selectOneCell(Set &unobserved, RandomGen &random)

@@ -82,8 +82,34 @@ public:
     }
 };
 
+inline ull sp_to_bits(const Superposition &sp)
+{
+    ull n = 0;
+    for(ull pattern: sp){
+        n += (1ull << pattern);
+    }
+    return n;
+}
 
 
+inline void bits_to_sp(ull state, Superposition &out_sp)
+{
+    int bwidth = std::bit_width(state);
+    for (int i = 0; i < bwidth; i++)
+    {
+        if(state & 1ull){
+            out_sp.insert(i);
+        }
+        state >>= 1ull;
+    }
+}
+
+inline Superposition bits_to_sp(ull state)
+{
+    Superposition sp = {};
+    bits_to_sp(state, sp);
+    return sp;
+}
 void print_grid_bits(vector<vector<unsigned long long>>& grid);
 void print_set(const set<int>& s);
 void print_grid(Grid& grid);

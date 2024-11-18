@@ -1,3 +1,4 @@
+#pragma once
 #include "WFC.h"
 #include <cuda_runtime.h>
 #include <thrust/host_vector.h>
@@ -13,13 +14,19 @@ private:
     /* data */
 protected:
     shared_ptr<Rule> rules = nullptr;
-    thrust::host_vector<int> h_vec;
+    
     template <typename Set>
     Position impl_selectOneCell(Set& unobserved, RandomGen& random);
 
     template <typename Set>
     void impl_propogate(Set& unobserved, Position& position, bool print_process = false);
 
+    // 4 * M, top_bottom_rules, bottom_top_rules, left_right_rules, right_left_rules
+    thrust::device_vector<ull> d_rules;
+    
+    // H * W, row major
+    thrust::device_vector<ull> d_grid;
+    thrust::host_vector<ull> h_grid;
 public:
     CudaWFC(){};
     CudaWFC(int H, int W,  shared_ptr<Rule> rules, int selection);
@@ -47,8 +54,20 @@ public:
     };
 
     Grid getGrid() override{
-        // TODO
-        return Grid(H, std::vector<Cell>(W, Superposition({0})));
+        // copy from device to host
+        h_grid = d_grid;
+
+        Grid sp_grid = Grid(H, vector<Superposition>(W));
+        for (int h = 0; h < H; h++)
+        {
+            for (int w = 0; w < W; w++)
+            {
+                ull state = h_grid[h * W + w];
+                bits_to_sp(state, sp_grid[h][w]);
+            }
+            
+        }
+        return sp_grid;
     }
 };
 
