@@ -165,7 +165,7 @@ int main(int argc, char *argv[]){
     if(solverType == 1){
         wfc_solver= std::make_shared<bit_WFC>(H, W, rule, selection);
     }
-    else if(solverType == 1){
+    else if(solverType == 2){
         wfc_solver= std::make_shared<CudaWFC>(H, W, rule, selection);
     }
     else{
