@@ -149,13 +149,14 @@ public:
 class bit_WFC:public WFC
 {
 private:
-    template <typename Set>
-    Position impl_selectOneCell(Set& unobserved, RandomGen& random);
 
     template <typename Set>
     void impl_propogate(Set& unobserved, Position& position, bool print_process = false);
 
 protected:
+    template <typename Set>
+    Position impl_selectOneCell(Set& unobserved, RandomGen& random);
+
     vector<vector<ull>> grid;
     vector<ull> top_bottom_rules; 
     vector<ull> bottom_top_rules;
@@ -239,7 +240,7 @@ public:
 };
 
 
-class mp_WFC:public naive_WFC
+class mp_WFC:public bit_WFC
 {
 private:
 
@@ -247,7 +248,7 @@ private:
     void impl_propogate(Set& unobserved, Position& position, bool print_process = false);
 
 public:
-    mp_WFC(int H, int W, shared_ptr<Rule> rules, int selection): naive_WFC(H,W,rules, selection){
+    mp_WFC(int H, int W, shared_ptr<Rule> rules, int selection): bit_WFC(H,W,rules, selection){
 
     }
     ~mp_WFC(){

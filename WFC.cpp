@@ -538,135 +538,128 @@ inline void mp_WFC::impl_propogate(Set &unobserved, Position &position, bool pri
     int index_q = 0;
 
     shared_ptr<Position[]> next_q(new Position[H * W]());
-    int index_next_q = 0;
+    int index_next_q=0;
 
-    bool remove[4];
+    shared_ptr<Position[]> re_q(new Position[H * W]());
+    int index_re_q=0;
 
     std::shared_mutex rwMutex;
+    std::shared_mutex rwMutex_;
 
     set<Position> processed;
     int count = 0;
-
-    q[index_q++] = position;
-
+    {
+        int h = position.first, w = position.second;
+        q[index_q++] = std::make_pair( 1+h,w+  0);
+        q[index_q++] = std::make_pair(-1+h,w+  0);
+        q[index_q++] = std::make_pair( 0+h,w+  1);
+        q[index_q++] = std::make_pair( 0+h,w+ -1);
+    }
     int max_distance = 0;
     Position distance_record;
 
     bool stop = false;
 
-    while (index_q > 0 && !stop) {
-        for (int i = 0; i < index_q; i++)
-        {
-            Position curr = q[i];
-            int h = curr.first;
-            int w = curr.second;
-            auto& sp = grid[h][w];
+    while ((index_q> 0 ) &&!stop) {
 
-            /*
-            processed.insert(curr);
-            count++;
+            #pragma omp parallel for num_threads(4) schedule(auto)
+            for (int i = 0; i < index_q; i++)
+            {
+                bool remove = false;
+                bool prop = false;
 
-            auto distance = abs(h - position.first) + abs(w - position.second);
-            if(distance > max_distance){
-                max_distance = distance;
-                distance_record = std::make_pair(h - position.first, w - position.second);
-            }*/
-            auto propogate_dir = [&](Position dir, vector<set<int>>& rules, int id){
-                remove[id] = false;
-                int neighbor_h = h + dir.first;
-                int neighbor_w = w + dir.second;
-                auto neighbor_pos = std::make_pair(neighbor_h, neighbor_w);
+                Position curr = q[i];
+                int h = curr.first;
+                int w = curr.second;
+                if(h < 0 || h >= H || w < 0 || w >= W){
+                        continue;
+                    }
+                
+                ull sp =grid[h][w];
+
+                auto propogate_dir = [&](Position dir, vector<ull>& rules, int id){
+                    int neighbor_h = h + dir.first;
+                    int neighbor_w = w + dir.second;
+
+                    if(neighbor_h < 0 || neighbor_h >= H || neighbor_w < 0 || neighbor_w >= W){
+                        return;
+                    }
+
+                    
+                    ull neighbor_sp = grid[neighbor_h][neighbor_w];
 
 
-                auto unobserved_it = unobserved.find(neighbor_pos);
-                if(neighbor_h < 0 || neighbor_h >= H || neighbor_w < 0 || neighbor_w >= W
-                    || unobserved_it == unobserved.end()){
+                    auto size = std::popcount(sp);
+
+                    if(size == 0 || size == 1) return;
                     
 
-                    return;
-                }
-
-
-                auto& neighbor_sp = grid[neighbor_h][neighbor_w];
-
-                Superposition vaild_state;
-                for (int state: sp)
-                {
-                    auto& rule = rules[state];
-                    vaild_state.insert(rule.begin(), rule.end());
-                }
-
-                // remove elemnet not in vaild_state
-                Superposition result = set_intersection(neighbor_sp, vaild_state);
-                assert(neighbor_sp.size() >= result.size());
-                                
-
-                // remove at least one element, add to queue propogate later.
-                if(result.size() < neighbor_sp.size()){
-                    int index = __sync_fetch_and_add(&index_next_q, 1);
-                    next_q[index] = neighbor_pos;
-                    neighbor_sp = result;
-
-                    if(selection == 3){
-                        double sumOfweights = 0;
-                        double sumOfweightLogweights = 0;
-                        for (auto iter = result.begin(); iter != result.end(); iter++){
-                                sumOfweights += weights[*(iter)];
-                                sumOfweightLogweights += weightLogweights[*(iter)];
+                    ull vaild_state = 0;
+                    auto bwidth = std::bit_width(neighbor_sp);
+                    for (ull i = 0; i < bwidth; i++)
+                    {
+                        if((neighbor_sp >> i) & 1ull){
+                            auto rule = rules[i];
+                            vaild_state |= rule;
                         }
-                        entropies[neighbor_h][neighbor_w] = log(sumOfweights) - sumOfweightLogweights / sumOfweights;
                     }
+
+                    // remove elemnet not in vaild_state
+                    ull result = sp & vaild_state;
+                    assert(sp >= result);
+                                    
+                    size = std::popcount(result);
+
+                    // remove at least one element, add to queue propogate later.
+                    if(result < sp){
+                        prop = true;
+                        sp = result;
+                    }
+
+                    if(size == 1){
+                        remove = true;
+                    }
+                    else if(size == 0){
+                        stop = true;
+                    }
+                    if(size == 0 && selection == 3){
+                        entropies[neighbor_h][neighbor_w] = -1;
+                    }
+                };
+
+
+                propogate_dir(std::make_pair(1, 0), bottom_top_rules,0); // to bottom
+                propogate_dir(std::make_pair(-1, 0), top_bottom_rules,1); // to top
+                propogate_dir(std::make_pair(0, 1), right_left_rules,2); // to right
+                propogate_dir(std::make_pair(0, -1), left_right_rules,3); // to left
+
+                grid[h][w] = sp;
+                if(prop){
+                    int index = __sync_fetch_and_add(&index_next_q, 4);
+                    next_q[index + 0] = std::make_pair( 1+h,w+  0);
+                    next_q[index + 1] = std::make_pair(-1+h,w+  0);
+                    next_q[index + 2] = std::make_pair( 0+h,w+  1);
+                    next_q[index + 3] = std::make_pair( 0+h,w+ -1);
                 }
-
-                if(neighbor_sp.size() == 1){
-                    remove[id] = true;
-
+                if(remove){
+                    int index = __sync_fetch_and_add(&index_re_q, 1);
+                    re_q[index] = curr;
                 }
-                else if(neighbor_sp.size() == 0){
-                    stop = true;
-                }
-                if(neighbor_sp.size() == 0 && selection == 3){
-                    entropies[neighbor_h][neighbor_w] = -1;
-                }
-            };
-
-
-            #pragma omp parallel sections num_threads(4)
-            {
-                #pragma omp section
-            propogate_dir(std::make_pair(1, 0), rules->top_bottom_rules,0); // to bottom
-            #pragma omp section
-            propogate_dir(std::make_pair(-1, 0), rules->bottom_top_rules,1); // to top
-            #pragma omp section
-            propogate_dir(std::make_pair(0, 1), rules->left_right_rules,2); // to right
-            #pragma omp section
-            propogate_dir(std::make_pair(0, -1), rules->right_left_rules,3); // to left
-            
-            }
-
-            if(remove[0]){
-                unobserved.erase(std::make_pair(h+1, w+0));     
-            }
-            if(remove[1]){
-                unobserved.erase(std::make_pair(h-1, w+0));     
-            }
-            if(remove[2]){
-                unobserved.erase(std::make_pair(h, w+1));     
-            }
-            if(remove[3]){
-                unobserved.erase(std::make_pair(h, w-1));     
-            }
-
-
-        }
-    
+            } 
+        
 
         next_q.swap(q);
+
         index_q = index_next_q;
         index_next_q = 0;
-
-    
     }
+
+
+    for (int i = 0; i < index_re_q; i++)
+    {
+        unobserved.erase(re_q[i]);
+    }
+    
 
     if(print_process){
         std::cout << "BF search: " << count << "\tCells: " << processed.size() << "\tDistance: " <<max_distance<< " (" << 
