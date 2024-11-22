@@ -543,8 +543,7 @@ inline void mp_WFC::impl_propogate(Set &unobserved, Position &position, bool pri
     shared_ptr<Position[]> re_q(new Position[H * W]());
     int index_re_q=0;
 
-    std::shared_mutex rwMutex;
-    std::shared_mutex rwMutex_;
+    std::shared_mutex rwMutex[H*W];
 
     set<Position> processed;
     int count = 0;
@@ -575,9 +574,12 @@ inline void mp_WFC::impl_propogate(Set &unobserved, Position &position, bool pri
                         continue;
                     }
                 
-                ull sp =grid[h][w];
-
-                auto propogate_dir = [&](Position dir, vector<ull>& rules, int id){
+                
+                Superposition sp;
+                { std::shared_lock<std::shared_mutex> readLock(rwMutex[h * W + w]);
+                sp =grid[h][w];
+                }
+                auto propogate_dir = [&](Position dir, vector<set<int>>& rules, int id){
                     int neighbor_h = h + dir.first;
                     int neighbor_w = w + dir.second;
 
@@ -585,55 +587,47 @@ inline void mp_WFC::impl_propogate(Set &unobserved, Position &position, bool pri
                         return;
                     }
 
-                    
-                    ull neighbor_sp = grid[neighbor_h][neighbor_w];
-
-
-                    auto size = std::popcount(sp);
-
-                    if(size == 0 || size == 1) return;
-                    
-
-                    ull vaild_state = 0;
-                    auto bwidth = std::bit_width(neighbor_sp);
-                    for (ull i = 0; i < bwidth; i++)
-                    {
-                        if((neighbor_sp >> i) & 1ull){
-                            auto rule = rules[i];
-                            vaild_state |= rule;
-                        }
+                    Superposition neighbor_sp ;
+                    {std::shared_lock<std::shared_mutex> readLock(rwMutex[neighbor_h * W + neighbor_w]);
+                    neighbor_sp = grid[neighbor_h][neighbor_w];
                     }
+                    if(sp.size() == 0 || sp.size() == 1) return;
+                    
+
+                    Superposition vaild_state;
+                    for (int state: neighbor_sp)
+                    {
+                        auto& rule = rules[state];
+                        vaild_state.insert(rule.begin(), rule.end());
+                    }                    
 
                     // remove elemnet not in vaild_state
-                    ull result = sp & vaild_state;
-                    assert(sp >= result);
+                    Superposition result = set_intersection(sp, vaild_state);
+                    assert(sp.size() >= result.size());
                                     
-                    size = std::popcount(result);
-
                     // remove at least one element, add to queue propogate later.
-                    if(result < sp){
+                    if(result.size() < sp.size()){
                         prop = true;
                         sp = result;
                     }
 
-                    if(size == 1){
+                    if(result.size() == 1){
                         remove = true;
                     }
-                    else if(size == 0){
+                    else if(result.size() == 0){
                         stop = true;
-                    }
-                    if(size == 0 && selection == 3){
-                        entropies[neighbor_h][neighbor_w] = -1;
                     }
                 };
 
 
-                propogate_dir(std::make_pair(1, 0), bottom_top_rules,0); // to bottom
-                propogate_dir(std::make_pair(-1, 0), top_bottom_rules,1); // to top
-                propogate_dir(std::make_pair(0, 1), right_left_rules,2); // to right
-                propogate_dir(std::make_pair(0, -1), left_right_rules,3); // to left
+                propogate_dir(std::make_pair(1, 0), rules->bottom_top_rules,0); // to bottom
+                propogate_dir(std::make_pair(-1, 0), rules->top_bottom_rules,1); // to top
+                propogate_dir(std::make_pair(0, 1), rules->right_left_rules,2); // to right
+                propogate_dir(std::make_pair(0, -1), rules->left_right_rules,3); // to left
 
+                {std::unique_lock<std::shared_mutex> readLock(rwMutex[h*W+w]);
                 grid[h][w] = sp;
+                }
                 if(prop){
                     int index = __sync_fetch_and_add(&index_next_q, 4);
                     next_q[index + 0] = std::make_pair( 1+h,w+  0);

@@ -240,7 +240,7 @@ public:
 };
 
 
-class mp_WFC:public bit_WFC
+class mp_WFC:public naive_WFC
 {
 private:
 
@@ -248,7 +248,7 @@ private:
     void impl_propogate(Set& unobserved, Position& position, bool print_process = false);
 
 public:
-    mp_WFC(int H, int W, shared_ptr<Rule> rules, int selection): bit_WFC(H,W,rules, selection){
+    mp_WFC(int H, int W, shared_ptr<Rule> rules, int selection): naive_WFC(H,W,rules, selection){
 
     }
     ~mp_WFC(){
