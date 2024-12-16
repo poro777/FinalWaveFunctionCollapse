@@ -1,11 +1,11 @@
 #pragma once
 #include <queue>
 
-#include "utils.h"
-#include "setOperator.h"
-#include "rules.h"
+#include "utils.cuh"
+#include "setOperator.cuh"
+#include "rules.cuh"
 #include <cassert>
-#include "myTimer.h"
+#include "myTimer.cuh"
 #include <bit>
 #include <cmath>
 #include <numeric>

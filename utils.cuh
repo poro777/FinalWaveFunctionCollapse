@@ -94,7 +94,7 @@ inline ull sp_to_bits(const Superposition &sp)
 
 inline void bits_to_sp(ull state, Superposition &out_sp)
 {
-    int bwidth = std::bit_width(state);
+    int bwidth = 64;
     for (int i = 0; i < bwidth; i++)
     {
         if(state & 1ull){

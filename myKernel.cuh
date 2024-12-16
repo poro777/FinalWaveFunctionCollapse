@@ -1,9 +1,13 @@
 #pragma once
-#include "WFC.h"
+#include "WFC.cuh"
 #include <cuda_runtime.h>
+#include <thrust/host_vector.h>
+#include <thrust/device_vector.h>
+#include <thrust/sort.h>
+#include <thrust/reduce.h>
 
 
-
+__constant__ ull d_rules[256]; 
 
 class CudaWFC: public WFC
 {
@@ -19,20 +23,23 @@ protected:
     void impl_propogate(Set& unobserved, Position& position, bool print_process = false);
 
     // 4 * M, top_bottom_rules, bottom_top_rules, left_right_rules, right_left_rules
-    ull* d_rules;
-    ull* h_rules;
     
+    ull* h_rules;
+    //int *canexit;
     // H * W, row major
     ull* d_grid;
-    ull* d_grid_backup;
     ull* h_grid;
+    int *canexit;
+    int *block_src;
+
+    //ull* d_grid_backup;
+
     int M;
 public:
     CudaWFC(){};
     CudaWFC(int H, int W,  shared_ptr<Rule> rules, int selection);
     ~CudaWFC(){
-        cudaFree(d_grid);
-        cudaFree(d_rules);
+
     };
 
     int getH(){return H;}
@@ -56,7 +63,7 @@ public:
 
     Grid getGrid() override{
         // copy from device to host
-
+        h_grid = d_grid;
         Grid sp_grid = Grid(H, vector<Superposition>(W));
         for (int h = 0; h < H; h++)
         {

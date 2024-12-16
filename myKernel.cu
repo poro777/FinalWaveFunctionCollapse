@@ -19,28 +19,236 @@ void add(int H, int W, ull* d_grid, ull* d_rules)
 }
 
 __global__ 
-void propogateCuda(int H, int W, int M, int center_row, int center_col, ull* d_grid, ull* d_rules)
+void propogateCuda_multiarray(int H, int W, int M, int center_row, int center_col, ull* d_grid
+, ull* d_grid_left, ull* d_grid_right, ull* d_grid_up, ull* d_grid_down)
 {
     
-    int index = threadIdx.x;
-    int stride = blockDim.x;
-    __shared__ unsigned long long d_rules_total[64*4];
+    int index = blockDim.x * blockIdx.x + threadIdx.x;
+    //int stride = blockDim.x;
+    int stride = 10000;
+    //__shared__ unsigned long long d_rules_total[64*4];
     __shared__ int canexit;
     //__shared__ unsigned long long bottom_top_rules[64];
     //__shared__ unsigned long long left_right_rules[64];
     //__shared__ unsigned long long right_left_rules[64];
     //__shared__ double weights[64];
     //__shared__ double weightLogweights[64];
-    for(int i=0;i<4*M;i++)
-    {
-        d_rules_total[i] = d_rules[i];
+    //for(int i=0;i<4*M;i++)
+    //{
+        //d_rules_total[i] = d_rules[i];
         //top_bottom_rules[i] = wfc_solver->top_bottom_rules[i];
         //bottom_top_rules[i] = wfc_solver->bottom_top_rules[i];
         //left_right_rules[i] = wfc_solver->left_right_rules[i];
         //right_left_rules[i] = wfc_solver->right_left_rules[i];
         //weights[i] = wfc_solver->weights[i];
         //weightLogweights[i] = wfc_solver->weightLogweights[i];
-    }
+    //}
+    canexit = 0;
+    int col = index % W;
+    int row = index / W;
+    int left = col - 1;
+    int right = col + 1;
+    int up = row - 1;
+    int down = row + 1;
+    bool leftcheck = left >= 0;
+    bool rightcheck = right < W;
+    bool upcheck = up >= 0 ;
+    bool downcheck = down < H;
+    ull my = d_grid[index];
+    ull result = my;
+    ull sp_left = 1<<M - 1, sp_right = 1<<M - 1, sp_up = 1<<M - 1, sp_down = 1<<M - 1;
+    //__syncthreads();
+    
+
+
+    int c = H+W;
+
+    
+    while((c--))
+    {
+        for(int i=index;i<H*W;i+=stride)
+        {
+            col = i % W; row = i / W;
+            left = col - 1; right = col + 1; up = row - 1; down = row + 1;
+            leftcheck = left >= 0; rightcheck = right < W; upcheck = up >= 0; downcheck = down < H;
+            my = d_grid[i];
+            result = my;
+            sp_left = leftcheck ? d_grid_left[row* W + left] : 1<<M - 1;
+            sp_right = rightcheck ? d_grid_right[row* W + right] : 1<<M - 1;
+            sp_up = upcheck ? d_grid_up[up*W + col] : 1<<M - 1;
+            sp_down = downcheck ? d_grid_down[down*W + col] : 1<<M - 1;
+
+            ull vaild_state = 0;
+            for (ull j = 0; j < M ; j++)
+            {
+                vaild_state = ((sp_left >> j) & 1ull) && leftcheck ? (vaild_state | d_rules[M * 2 + j]) : vaild_state;
+            }
+            result = leftcheck ? result & vaild_state : result;
+            vaild_state = 0;
+            for (ull j = 0; j < M ; j++)
+            {
+                vaild_state = ((sp_right >> j) & 1ull) && rightcheck ? (vaild_state | d_rules[M * 3 + j]) : vaild_state;
+            }
+            result = rightcheck ? result & vaild_state : result;
+            vaild_state = 0;
+            for (ull j = 0; j < M ; j++)
+            {   
+                vaild_state = ((sp_up >> j) & 1ull) && upcheck ? (vaild_state | d_rules[M * 0 + j]) : vaild_state;
+            }
+            result = upcheck ? result & vaild_state : result;
+            vaild_state = 0;
+            for (ull j = 0; j < M ; j++)
+            {
+                vaild_state = ((sp_down >> j) & 1ull) && downcheck ? (vaild_state | d_rules[M * 1 + j]) : vaild_state;
+            }
+            result = downcheck ? result & vaild_state : result;
+            d_grid[i] = result;
+            d_grid_left[i] = result;
+            d_grid_right[i] = result;
+            d_grid_down[i] = result;
+            d_grid_up[i] = result;
+            if(my > result) canexit = 1;
+            //canexit = my == result ? canexit : 1;
+        }
+        __syncthreads();
+        if(canexit == 0)break;
+        canexit = 0;
+    }    
+}
+
+__global__ 
+void propogateCuda(int H, int W, int M, int center_row, int center_col, ull* d_grid)
+{
+    int _col = blockIdx.x * blockDim.x + threadIdx.x;
+    int _row = blockIdx.y * blockDim.y + threadIdx.y;
+    int index = _row  * blockDim.x + threadIdx.x;
+    int stride = 1024;
+    
+    __shared__ int canexit;
+    canexit = 0;
+    int col = index % W;
+    int row = index / W;
+    int left = col - 1;
+    int right = col + 1;
+    int up = row - 1;
+    int down = row + 1;
+    bool leftcheck = left >= 0;
+    bool rightcheck = right < W;
+    bool upcheck = up >= 0 ;
+    bool downcheck = down < H;
+    ull my = d_grid[index];
+    ull result = my;
+    ull sp_left = 1<<M - 1, sp_right = 1<<M - 1, sp_up = 1<<M - 1, sp_down = 1<<M - 1;
+
+    
+
+
+    int c = H+W;
+
+    
+    while((c--))
+    {
+        for(int i=index;i<H*W;i+=stride)
+        {
+            col = i % W; row = i / W;
+            left = col - 1; right = col + 1; up = row - 1; down = row + 1;
+            leftcheck = left >= 0; rightcheck = right < W; upcheck = up >= 0; downcheck = down < H;
+            my = d_grid[i];
+            result = my;
+
+            sp_left = leftcheck ? d_grid[row* W + left] : 1<<M - 1;
+            ull vaild_state = 0;
+            for (int j = 0; j < M ; j+=8)
+            {
+                vaild_state = ((sp_left >> j) & 1ull) && leftcheck ? (vaild_state | d_rules[M * 2 + j]) : vaild_state;
+                vaild_state = ((sp_left >> j+1) & 1ull) && leftcheck ? (vaild_state | d_rules[M * 2 + j+1]) : vaild_state;
+                vaild_state = ((sp_left >> j+2) & 1ull) && leftcheck ? (vaild_state | d_rules[M * 2 + j+2]) : vaild_state;
+                vaild_state = ((sp_left >> j+3) & 1ull) && leftcheck ? (vaild_state | d_rules[M * 2 + j+3]) : vaild_state;
+                vaild_state = ((sp_left >> j+4) & 1ull) && leftcheck ? (vaild_state | d_rules[M * 2 + j+4]) : vaild_state;
+                vaild_state = ((sp_left >> j+5) & 1ull) && leftcheck ? (vaild_state | d_rules[M * 2 + j+5]) : vaild_state;
+                vaild_state = ((sp_left >> j+6) & 1ull) && leftcheck ? (vaild_state | d_rules[M * 2 + j+6]) : vaild_state;
+                vaild_state = ((sp_left >> j+7) & 1ull) && leftcheck ? (vaild_state | d_rules[M * 2 + j+7]) : vaild_state;
+            }
+            result = leftcheck ? result & vaild_state : result;
+            
+            sp_right = rightcheck ? d_grid[row* W + right] : 1<<M - 1;
+            vaild_state = 0;
+            for (int j = 0; j < M ; j+=8)
+            {
+                vaild_state = ((sp_right >> j) & 1ull) && rightcheck ? (vaild_state | d_rules[M * 3 + j]) : vaild_state;
+                vaild_state = ((sp_right >> j+1) & 1ull) && rightcheck ? (vaild_state | d_rules[M * 3 + j+1]) : vaild_state;
+                vaild_state = ((sp_right >> j+2) & 1ull) && rightcheck ? (vaild_state | d_rules[M * 3 + j+2]) : vaild_state;
+                vaild_state = ((sp_right >> j+3) & 1ull) && rightcheck ? (vaild_state | d_rules[M * 3 + j+3]) : vaild_state;
+                vaild_state = ((sp_right >> j+4) & 1ull) && rightcheck ? (vaild_state | d_rules[M * 3 + j+4]) : vaild_state;
+                vaild_state = ((sp_right >> j+5) & 1ull) && rightcheck ? (vaild_state | d_rules[M * 3 + j+5]) : vaild_state;
+                vaild_state = ((sp_right >> j+6) & 1ull) && rightcheck ? (vaild_state | d_rules[M * 3 + j+6]) : vaild_state;
+                vaild_state = ((sp_right >> j+7) & 1ull) && rightcheck ? (vaild_state | d_rules[M * 3 + j+7]) : vaild_state;
+            }
+            result = rightcheck ? result & vaild_state : result;
+            
+            
+            sp_up = upcheck ? d_grid[up*W + col] : 1<<M - 1;
+            vaild_state = 0;
+            for (int j = 0; j < M ; j+=8)
+            {   
+                vaild_state = ((sp_up >> j) & 1ull) && upcheck ? (vaild_state | d_rules[M * 0 + j]) : vaild_state;
+                vaild_state = ((sp_up >> j+1) & 1ull) && upcheck ? (vaild_state | d_rules[M * 0 + j+1]) : vaild_state;
+                vaild_state = ((sp_up >> j+2) & 1ull) && upcheck ? (vaild_state | d_rules[M * 0 + j+2]) : vaild_state;
+                vaild_state = ((sp_up >> j+3) & 1ull) && upcheck ? (vaild_state | d_rules[M * 0 + j+3]) : vaild_state;
+                vaild_state = ((sp_up >> j+4) & 1ull) && upcheck ? (vaild_state | d_rules[M * 0 + j+4]) : vaild_state;
+                vaild_state = ((sp_up >> j+5) & 1ull) && upcheck ? (vaild_state | d_rules[M * 0 + j+5]) : vaild_state;
+                vaild_state = ((sp_up >> j+6) & 1ull) && upcheck ? (vaild_state | d_rules[M * 0 + j+6]) : vaild_state;
+                vaild_state = ((sp_up >> j+7) & 1ull) && upcheck ? (vaild_state | d_rules[M * 0 + j+7]) : vaild_state;
+            }
+            result = upcheck ? result & vaild_state : result;
+            
+            sp_down = downcheck ? d_grid[down*W + col] : 1<<M - 1;
+            vaild_state = 0;
+            for (int j = 0; j < M ; j+=8)
+            {
+                vaild_state = ((sp_down >> j) & 1ull) && downcheck ? (vaild_state | d_rules[M * 1 + j]) : vaild_state;
+                vaild_state = ((sp_down >> j+1) & 1ull) && downcheck ? (vaild_state | d_rules[M * 1 + j+1]) : vaild_state;
+                vaild_state = ((sp_down >> j+2) & 1ull) && downcheck ? (vaild_state | d_rules[M * 1 + j+2]) : vaild_state;
+                vaild_state = ((sp_down >> j+3) & 1ull) && downcheck ? (vaild_state | d_rules[M * 1 + j+3]) : vaild_state;
+                vaild_state = ((sp_down >> j+4) & 1ull) && downcheck ? (vaild_state | d_rules[M * 1 + j+4]) : vaild_state;
+                vaild_state = ((sp_down >> j+5) & 1ull) && downcheck ? (vaild_state | d_rules[M * 1 + j+5]) : vaild_state;
+                vaild_state = ((sp_down >> j+6) & 1ull) && downcheck ? (vaild_state | d_rules[M * 1 + j+6]) : vaild_state;
+                vaild_state = ((sp_down >> j+7) & 1ull) && downcheck ? (vaild_state | d_rules[M * 1 + j+7]) : vaild_state;
+            }
+            result = downcheck ? result & vaild_state : result;
+            d_grid[i] = result;
+            if(my > result) canexit = 1;
+            //canexit = my == result ? canexit : 1;
+        }
+        __syncthreads();
+        if(canexit == 0)break;
+        canexit = 0;
+    }    
+}
+
+__global__ 
+void propogateCuda_col(int H, int W, int M, int center_row, int center_col, ull* d_grid, ull* d_grid_col)
+{
+    
+    int index = threadIdx.x;
+    int stride = blockDim.x;
+    //__shared__ unsigned long long d_rules_total[64*4];
+    __shared__ int canexit;
+    //__shared__ unsigned long long bottom_top_rules[64];
+    //__shared__ unsigned long long left_right_rules[64];
+    //__shared__ unsigned long long right_left_rules[64];
+    //__shared__ double weights[64];
+    //__shared__ double weightLogweights[64];
+    //for(int i=0;i<4*M;i++)
+    //{
+        //d_rules_total[i] = d_rules[i];
+        //top_bottom_rules[i] = wfc_solver->top_bottom_rules[i];
+        //bottom_top_rules[i] = wfc_solver->bottom_top_rules[i];
+        //left_right_rules[i] = wfc_solver->left_right_rules[i];
+        //right_left_rules[i] = wfc_solver->right_left_rules[i];
+        //weights[i] = wfc_solver->weights[i];
+        //weightLogweights[i] = wfc_solver->weightLogweights[i];
+    //}
     canexit = 0;
     int col = index % W;
     int row = index / W;
@@ -73,34 +281,35 @@ void propogateCuda(int H, int W, int M, int center_row, int center_col, ull* d_g
             result = my;
             sp_left = leftcheck ? d_grid[row* W + left] : 1<<M - 1;
             sp_right = rightcheck ? d_grid[row* W + right] : 1<<M - 1;
-            sp_up = upcheck ? d_grid[up*W + col] : 1<<M - 1;
-            sp_down = downcheck ? d_grid[down*W + col] : 1<<M - 1;
+            sp_up = upcheck ? d_grid_col[up + col * H] : 1<<M - 1;
+            sp_down = downcheck ? d_grid_col[down + col*H] : 1<<M - 1;
 
             ull vaild_state = 0;
             for (ull j = 0; j < M && leftcheck; j++)
             {
-                vaild_state = ((sp_left >> j) & 1ull) ? (vaild_state | d_rules_total[M * 2 + j]) : vaild_state;
+                vaild_state = ((sp_left >> j) & 1ull) ? (vaild_state | d_rules[M * 2 + j]) : vaild_state;
             }
             result = leftcheck ? result & vaild_state : result;
             vaild_state = 0;
             for (ull j = 0; j < M && rightcheck; j++)
             {
-                vaild_state = ((sp_right >> j) & 1ull) ? (vaild_state | d_rules_total[M * 3 + j]) : vaild_state;
+                vaild_state = ((sp_right >> j) & 1ull) ? (vaild_state | d_rules[M * 3 + j]) : vaild_state;
             }
             result = rightcheck ? result & vaild_state : result;
             vaild_state = 0;
             for (ull j = 0; j < M && upcheck; j++)
             {   
-                vaild_state = ((sp_up >> j) & 1ull) ? (vaild_state | d_rules_total[M * 0 + j]) : vaild_state;
+                vaild_state = ((sp_up >> j) & 1ull) ? (vaild_state | d_rules[M * 0 + j]) : vaild_state;
             }
             result = upcheck ? result & vaild_state : result;
             vaild_state = 0;
             for (ull j = 0; j < M && downcheck; j++)
             {
-                vaild_state = ((sp_down >> j) & 1ull) ? (vaild_state | d_rules_total[M * 1 + j]) : vaild_state;
+                vaild_state = ((sp_down >> j) & 1ull) ? (vaild_state | d_rules[M * 1 + j]) : vaild_state;
             }
             result = downcheck ? result & vaild_state : result;
             d_grid[i] = result;
+            d_grid_col[col*H+row] = result;
             if(my > result) canexit = 1;
             //canexit = my == result ? canexit : 1;
         }
@@ -108,6 +317,79 @@ void propogateCuda(int H, int W, int M, int center_row, int center_col, ull* d_g
         if(canexit == 0)break;
         canexit = 0;
     }    
+}
+
+__global__ 
+void propogateCuda_multiblock(int H, int W, int M, int center_row, int center_col, ull* d_grid, int *block_src, int *canexit)
+{
+    (*block_src) = 0;
+    (*canexit) = 0;
+
+    int index = blockDim.x * blockIdx.x + threadIdx.x;
+    //int stride = blockDim.x;
+    //__shared__ int canexit;
+    int col = index % W;
+    int row = index / W;
+    int left = col - 1;
+    int right = col + 1;
+    int up = row - 1;
+    int down = row + 1;
+    bool leftcheck = left >= 0;
+    bool rightcheck = right < W;
+    bool upcheck = up >= 0 ;
+    bool downcheck = down < H;
+    ull my = d_grid[index];
+    ull result = my;
+    ull sp_left = 1<<M - 1, sp_right = 1<<M - 1, sp_up = 1<<M - 1, sp_down = 1<<M - 1;
+    int c = H+W;
+    while((c--))
+    {
+        col = index % W; row = index / W;
+        left = col - 1; right = col + 1; up = row - 1; down = row + 1;
+        leftcheck = left >= 0; rightcheck = right < W; upcheck = up >= 0; downcheck = down < H;
+        my = d_grid[index];
+        result = my;
+        sp_left = leftcheck ? d_grid[row* W + left] : 1<<M - 1;
+        sp_right = rightcheck ? d_grid[row* W + right] : 1<<M - 1;
+        sp_up = upcheck ? d_grid[up*W + col] : 1<<M - 1;
+        sp_down = downcheck ? d_grid[down*W + col] : 1<<M - 1;
+
+        ull vaild_state = 0;
+        for (ull j = 0; j < M && leftcheck; j++)
+        {
+            vaild_state = ((sp_left >> j) & 1ull) ? (vaild_state | d_rules[M * 2 + j]) : vaild_state;
+        }
+        result = leftcheck ? result & vaild_state : result;
+        vaild_state = 0;
+        for (ull j = 0; j < M && rightcheck; j++)
+        {
+            vaild_state = ((sp_right >> j) & 1ull) ? (vaild_state | d_rules[M * 3 + j]) : vaild_state;
+        }
+        result = rightcheck ? result & vaild_state : result;
+        vaild_state = 0;
+        for (ull j = 0; j < M && upcheck; j++)
+        {   
+            vaild_state = ((sp_up >> j) & 1ull) ? (vaild_state | d_rules[M * 0 + j]) : vaild_state;
+        }
+        result = upcheck ? result & vaild_state : result;
+        vaild_state = 0;
+        for (ull j = 0; j < M && downcheck; j++)
+        {
+            vaild_state = ((sp_down >> j) & 1ull) ? (vaild_state | d_rules[M * 1 + j]) : vaild_state;
+        }
+        result = downcheck ? result & vaild_state : result;
+        d_grid[index] = result;
+        if(my > result) (*canexit) = 1;
+        //canexit = my == result ? canexit : 1;
+    }
+    //if(threadIdx.x == 0)
+    //    atomicAdd(block_src,1);
+
+    __syncthreads();
+    //while((*block_src) != H)continue;
+
+    if((*canexit) == 0)return;
+    (*canexit) = 0;    
 }
 
 CudaWFC::CudaWFC(int H, int W,  shared_ptr<Rule> rules, int selection):WFC(H, W, rules,selection){
@@ -127,14 +409,14 @@ CudaWFC::CudaWFC(int H, int W,  shared_ptr<Rule> rules, int selection):WFC(H, W,
         h_rules[M * 2 + i] = sp_to_bits(rules->left_right_rules[i]);
         h_rules[M * 3 + i] = sp_to_bits(rules->right_left_rules[i]);
     }
-    
-    // Copy the host vector to a Thrust device vector
     cudaMalloc((void**)&d_grid, sizeof(ull) * H*W);
-    cudaMalloc((void**)&d_grid_backup, sizeof(ull) * H*W);
-    cudaMalloc((void**)&d_rules, sizeof(ull) * rules->M * 4);
     cudaMemcpy(d_grid, h_grid, sizeof(ull) * H*W, cudaMemcpyHostToDevice);
-    cudaMemcpy(d_rules, h_rules, sizeof(ull) * rules->M * 4, cudaMemcpyHostToDevice);
-    cudaMemcpy(d_grid_backup, h_grid, sizeof(ull) * H*W, cudaMemcpyHostToDevice);
+    //cudaMalloc((void**)&d_grid_backup, sizeof(ull) * H*W);
+    //cudaMalloc((void**)&d_rules, sizeof(ull) * rules->M * 4);
+    //cudaMemcpy(d_grid, h_grid, sizeof(ull) * H*W, cudaMemcpyHostToDevice);
+    //cudaMemcpy(d_rules, h_rules, sizeof(ull) * rules->M * 4, cudaMemcpyHostToDevice);
+    cudaMemcpyToSymbol(d_rules, h_rules, sizeof(ull) * rules->M * 4);
+    //cudaMemcpy(d_grid_backup, h_grid, sizeof(ull) * H*W, cudaMemcpyHostToDevice);
 }
 
 
@@ -190,6 +472,13 @@ Position CudaWFC::impl_selectOneCell(Set &unobserved, RandomGen &random){
         throw std::logic_error("Method not yet implemented");
     }
 }
+struct comapre
+{
+    __device__
+    bool operator()(ull x) const {
+        return __popcll(x)!=1;
+    }
+};
 template <typename Set>
 void CudaWFC::impl_propogate(Set &unobserved, Position &position, bool print_process){
     // TODO
@@ -197,7 +486,9 @@ void CudaWFC::impl_propogate(Set &unobserved, Position &position, bool print_pro
     //cudaMemcpy(d_grid, h_grid, sizeof(ull) * H*W, cudaMemcpyHostToDevice);
     int row = position.first, col = position.second;
     int index = row * W + col;
-    propogateCuda<<<1,1024>>>(H,W, M, row, col,d_grid,d_rules);
+    int block = H*W/1024;
+    if(block<=0)block = 1;
+    propogateCuda<<<block,1024>>>(H,W, M, row, col,d_grid);
     //add<<<1,1>>>(H,W,d_grid,d_rules);
 
     cudaError_t error = cudaGetLastError();
@@ -219,4 +510,5 @@ void CudaWFC::impl_propogate(Set &unobserved, Position &position, bool print_pro
             ++it;
         }
     }
+    
 }

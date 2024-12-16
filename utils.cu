@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include "utils.h"
+#include "utils.cuh"
 
 void print_grid_bits(vector<vector<unsigned long long>> &grid)
 {
@@ -39,7 +39,7 @@ void print_grid(Grid& grid){
 
             }
             else{
-                //auto s = *state.begin();
+                auto s = *state.begin();
                 
                 std::cout <<" "<< *state.begin() << " ";
             }

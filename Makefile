@@ -1,23 +1,35 @@
-# Define the compiler and options
-CXX = nvcc 
+NVCC = nvcc
+ARCH ?= sm_61
+NVCCFLAGS += -O2 -std=c++20
 
+CUDA_PATH ?= $(shell echo $$CUDA_HOME)
+ifneq ($(CUDA_PATH),)
+    CUDA_LIB_PATH = $(CUDA_PATH)/lib64
+    CUDA_INCLUDE_PATH = $(CUDA_PATH)/include
+else
+    $(error CUDA_PATH is not set. Please set CUDA_PATH or CUDA_HOME environment variable)
+endif
 
-# Target executable
 TARGET = a.out
 
-# Source files
-SRCS = main.cpp utils.cpp rules.cpp WFC.cpp myKernel.cu
+CUDA_SRCS = main.cu myKernel.cu rules.cu utils.cu WFC.cu 
 
-# Header files
-HDRS = utils.h rules.h myKernel.cuh myTimer.h setOperator.h WFC.h
+OBJ_DIR = build
+CUDA_OBJS = $(patsubst %.cu,$(OBJ_DIR)/%.o,$(CUDA_SRCS))
 
-# Default target to build and run the program
-all: $(TARGET)
+all: $(OBJ_DIR) $(TARGET)
 
-# Rule to compile the source files
-$(TARGET): $(SRCS) $(HDRS)
-	$(CXX) -std=c++20 -o $(TARGET) $(SRCS)
+$(OBJ_DIR):
+	mkdir -p $(OBJ_DIR)
 
-# Clean up by removing the compiled executable
+$(OBJ_DIR)/%.o: %.cu | $(OBJ_DIR)
+	$(NVCC) $(NVCCFLAGS) -I$(CUDA_INCLUDE_PATH) -arch $(ARCH) -c $< -o $@
+
+$(TARGET): $(CUDA_OBJS)
+	$(NVCC) $(NVCCFLAGS) -o $(TARGET) $(CUDA_OBJS) -L$(CUDA_LIB_PATH) -lcudart -lcudadevrt
+
 clean:
 	rm -f $(TARGET)
+	rm -rf $(OBJ_DIR)
+
+.PHONY: all clean

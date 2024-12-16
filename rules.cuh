@@ -4,8 +4,8 @@
 #include <iostream>
 #include <filesystem>
 
-#include "utils.h"
-#include "setOperator.h"
+#include "utils.cuh"
+#include "setOperator.cuh"
 
 using std::set;
 using std::vector;
@@ -73,7 +73,7 @@ public:
     
     Superposition initValue(){
         Superposition initial_state;
-        for (int i = 0; i < M; i++)
+        for (size_t i = 0; i < M; i++)
         {
             initial_state.insert(i);
         }
@@ -81,7 +81,7 @@ public:
     }
 
     void print(){
-        for (int i = 0; i < M; i++)
+        for (size_t i = 0; i < M; i++)
         {
             std::cout << "\n->" << i << "\n";
             std::cout << "top:\t";

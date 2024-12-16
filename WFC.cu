@@ -1,5 +1,5 @@
-#include "WFC.h"
-#include "utils.h"
+#include "WFC.cuh"
+#include "utils.cuh"
 #include <omp.h>
 
 template <typename Set>

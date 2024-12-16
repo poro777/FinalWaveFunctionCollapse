@@ -10,10 +10,10 @@
 #include <string>
 #include <getopt.h>
 
-#include "utils.h"
-#include "WFC.h"
-#include "setOperator.h"
-#include "rules.h"
+#include "utils.cuh"
+#include "WFC.cuh"
+#include "setOperator.cuh"
+#include "rules.cuh"
 #include "myKernel.cuh"
 
 template <typename Set>
@@ -47,7 +47,7 @@ bool run(shared_ptr<WFC> wfc_solver, long long seed, shared_ptr<myTimer> timer, 
         
         // collapse
         auto selected_position = wfc_solver->selectOneCell(unobserved, random);
-
+        if(unobserved.size() == 0)break;
         auto collapseState = wfc_solver->collapse(selected_position, random, print_step);
 
         if(collapseState == FAILED){
@@ -166,6 +166,7 @@ int main(int argc, char *argv[]){
         wfc_solver= std::make_shared<bit_WFC>(H, W, rule, selection);
     }
     else if(solverType == 2){
+        std::cout<<"cuda version\n"; 
         wfc_solver= std::make_shared<CudaWFC>(H, W, rule, selection);
     }
     else{
@@ -181,9 +182,8 @@ int main(int argc, char *argv[]){
         rule->print();
     }
 
-
     bool finish = false;
-    
+
     if(selection == 1){
         // random selection by call set.begin()
         finish = run<unordered_set<Position, pair_hash>>(wfc_solver, seed, timer, print_step, print_process);
