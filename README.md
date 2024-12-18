@@ -9,6 +9,16 @@
 > make
 > ./a.out [-argument...]
 ```
+One of the commands in the slide: `./a.out -h 64 -w 256 -r 2 -s 999 -b [type]`
+
+<img src="./data/123.PNG" width="500">
+
+Reference Time
+- `Naive(std::set)`: 1160ms
+- `Bit`: 41ms
+- `openMP_bit_outside_in`: 152ms
+- `set_4_dir`: 536ms
+- `cuda`: -ms
 
 ## Input
 ### With argument
@@ -42,13 +52,14 @@ default:
     - `2`: Enable openMP/cuda implement at each branch.
 - `-c`, `--selection` : `-c 1`. selection mode
     - `0` : order selection (top -> bottom, left -> right)
+<img src="./data/c0.png" width="500">
+<img src="./data/r1c0.png" width="500">
 
-    ![](./data/c0.png)
-    ![](./data/r1c0.png)
     - `1` : unorder selection (first element in hash table)
 
-    ![](./data/c1.png)
-    ![](./data/r1c1.png)
+<img src="./data/c1.png" width="500">
+<img src="./data/r1c1.png" width="500">
+
     - `2` : random selection
 
    - `3` : enable entropy
