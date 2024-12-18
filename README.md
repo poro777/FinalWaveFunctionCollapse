@@ -50,19 +50,22 @@ default:
     - `0`: naive version. Disable bit operator.
     - `1`: Bit version. enable by default that is faster than original one
     - `2`: Enable openMP/cuda implement at each branch.
+    
 - `-c`, `--selection` : `-c 1`. selection mode
     - `0` : order selection (top -> bottom, left -> right)
-<img src="./data/c0.png" width="500">
-<img src="./data/r1c0.png" width="500">
+
+        <img src="./data/c0.png" width="500">
+        <img src="./data/r1c0.png" width="500">
+
 
     - `1` : unorder selection (first element in hash table)
 
-<img src="./data/c1.png" width="500">
-<img src="./data/r1c1.png" width="500">
+        <img src="./data/c1.png" width="500">
+        <img src="./data/r1c1.png" width="500">
 
     - `2` : random selection
 
-   - `3` : enable entropy
+    - `3` : enable entropy
 
 ### No argument
 - `--print-time` : print profiling time.
