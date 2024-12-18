@@ -37,7 +37,6 @@ default:
     ![](./data/r1c1.png)
     - `2` : random selection
 
-    ![](./data/c2.png)
    - `3` : enable entropy
 
 ### No argument
