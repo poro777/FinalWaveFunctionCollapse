@@ -1,4 +1,9 @@
 # Wave Function Collapse
+## Branch
+- `Cuda`: Implement cuda version. (slower)
+- `openMP_bit_outside_in`: Implement bit openMP version. (slower)
+- `set_4_dir`: Implement naive(set) openMP version. (faster in some cases)
+
 ## Run
 ```
 > make
@@ -19,13 +24,22 @@ case 0:
 case 1:
     rule = std::make_shared<Rules::Example>();
     break;
+case 2:
+    rule = std::make_shared<Rules::Summer>();
+    break;
+case 3:
+    rule = std::make_shared<Rules::RPGMap>();
+    break;
 default:
     rule = std::make_shared<Rules::Example>();
     break;
 } 
 ```
 - `-s`, `--seed` : `-s 999` set seed to 999
-- `-b`, `--bitOp` : `-b 0` disable bit operator (enable by default that is faster than original one).
+- `-b`, `--solverType` : `-b 1` enable bit version
+    - `0`: naive version. Disable bit operator.
+    - `1`: Bit version. enable by default that is faster than original one
+    - `2`: Enable openMP/cuda implement at each branch.
 - `-c`, `--selection` : `-c 1`. selection mode
     - `0` : order selection (top -> bottom, left -> right)
 
